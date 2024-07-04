@@ -1,10 +1,12 @@
 Package: SegColR
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Title: Segment and Color Analysis Using Grounded SAM
+Version: 0.1.0
+Author: James Boyko [aut, cre]
+Maintainer: James Boyko <jboyko@umich.edu>
+Description: This package provides tools for image segmentation and color 
+    analysis using Grounded SAM (Segment Anything Model). It interfaces with 
+    Python libraries to perform advanced image processing tasks and offers 
+    R functions for easy integration in R workflows.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -16,5 +18,7 @@ Suggests:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Imports: 
-    reticulate
+    reticulate,
+    imager,
+    jsonlite,
 SystemRequirements: Python (>= 3.8), Conda
