@@ -8,10 +8,8 @@ grounded_segmentation_cli(
   image_path,
   labels,
   threshold = 0.3,
-  polygon_refinement = FALSE,
   detector_id = "IDEA-Research/grounding-dino-tiny",
   segmenter_id = "Zigeng/SlimSAM-uniform-77",
-  script_path = system.file("python/main.py", package = "SegColR"),
   output_plot = NULL,
   output_json = NULL,
   conda_env = "segcolr-env"
@@ -24,13 +22,9 @@ grounded_segmentation_cli(
 
 \item{threshold}{Numeric. Detection threshold (default: 0.3).}
 
-\item{polygon_refinement}{Logical. Whether to refine polygons (default: FALSE).}
-
 \item{detector_id}{Character string. ID of the detector model.}
 
 \item{segmenter_id}{Character string. ID of the segmenter model.}
-
-\item{script_path}{Character string. Path to the Python script.}
 
 \item{output_plot}{Character string. Path or directory to save the output plot.}
 

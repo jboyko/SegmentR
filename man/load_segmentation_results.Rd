@@ -4,14 +4,12 @@
 \alias{load_segmentation_results}
 \title{Load segmentation results}
 \usage{
-load_segmentation_results(image_path, json_path, mask_format = "image")
+load_segmentation_results(image_path, json_path)
 }
 \arguments{
 \item{image_path}{Character string. Path to the original image file.}
 
 \item{json_path}{Character string. Path to the JSON file containing segmentation results.}
-
-\item{mask_format}{Character string. Format of the mask files. Either "image" or "binary".}
 }
 \value{
 A list containing the original image, segmentation results, and masks.
@@ -25,7 +23,6 @@ from a previous segmentation operation.
 results <- load_segmentation_results(
   image_path = "path/to/image.jpg",
   json_path = "path/to/results.json",
-  mask_format = "image"
 )
 }
 }

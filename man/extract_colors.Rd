@@ -4,24 +4,32 @@
 \alias{extract_colors}
 \title{Extract color information from an image using a mask}
 \usage{
-extract_colors(image, mask, n_colors = 5)
+extract_colors(image, mask, n_colors = 5, custom_colors = NULL)
 }
 \arguments{
 \item{image}{Array. The original image (height x width x channels).}
 
 \item{mask}{Logical matrix. The mask specifying which pixels to consider.}
 
-\item{n_colors}{Integer. Number of dominant colors to extract (default: 5).}
+\item{n_colors}{Integer. Number of dominant colors to extract when using k-means clustering (default: 5).}
+
+\item{custom_colors}{Character vector. Optional. Hex codes of colors to use for clustering instead of k-means.}
 }
 \value{
 A list containing color information including dominant colors and color statistics.
 }
 \description{
 This function extracts color information from the parts of an image
-specified by a mask.
+specified by a mask. It can either use k-means clustering to find dominant
+colors or cluster based on user-specified colors.
 }
 \examples{
 \dontrun{
+# Using k-means clustering
 color_info <- extract_colors(results$image, final_mask, n_colors = 3)
+
+# Using custom colors
+custom_colors <- c("#FF0000", "#00FF00", "#0000FF")
+color_info <- extract_colors(results$image, final_mask, custom_colors = custom_colors)
 }
 }

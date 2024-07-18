@@ -1,0 +1,602 @@
+---
+title: "Using the SegColR Package"
+author: "James Boyko"
+date: "`r Sys.Date()`"
+bibliography: bibliography.bib
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using the SegColR Package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## SegColR
+
+The SegColR package is a tool for image segmentation and color extraction. In this vignette, we'll walk through an example of how to use the package's key features. SegColR is built off of 2 pretrained models: [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) [@liu2023grounding] and [SegmentAnything.](https://github.com/facebookresearch/segment-anything) [@kirillov2023segany]. Specifically, I use a lighter version of SegmentAnything called [SlimSAM](https://github.com/czg1225/SlimSAM) [@chen20230] which uses a fraction of the parameters and achieves similar results as the original SAM. 
+
+## Introduction
+
+### What is Object Detection?
+
+Object detection is a computer vision task that involves identifying and locating objects within an image. It goes beyond simply classifying the entire image and instead identifies the specific locations and boundaries of individual objects.
+
+### What is Instance Segmentation?
+
+Instance segmentation is a more advanced computer vision task that builds upon object detection. It not only identifies the objects in an image but also accurately segments each object instance, providing a pixel-level mask for each detected object.
+
+### What are Pretrained Models?
+
+Pretrained models are machine learning models that have been trained on large datasets, typically for a specific task like object detection or instance segmentation. These models can then be fine-tuned or used directly for similar tasks, saving time and resources compared to training a model from scratch. Pretrained models are particularly useful in academic settings where we often have far less data at hand. Fortunately, for many computer vision tasks, the basic building blocks are going to be the same regardless of application. For example, detecting the edge of a car is not all that different from detecting the edge of a flower, since an edge is an edge.  
+
+### Color Extraction Process
+
+In addition to segmenting objects within an image, the SegColR package also provides tools for analyzing the colors present in the segmented regions. This color extraction process allows users to gain insights into the visual characteristics of the detected objects.
+
+## Installation
+
+Installation
+Using the SegColR package requires both R and Python to be installed on your system, as well as the Conda package manager. This is because the package utilizes Python-based models and scripts for the image segmentation functionality.
+
+The first step is to ensure you have R and Python installed. If you don't have Python installed, you can download it from the official Python website (https://www.python.org/downloads/). Once Python is installed, you'll need to install the Conda package manager, which you can download from the Anaconda website (https://www.anaconda.com/products/individual).
+
+After setting up the necessary dependencies, you can install the SegColR package itself. The package provides a function called setup_conda_environment() that will handle the setup of the required Python environment and dependencies.
+
+There are two options for setting up the Conda environment:
+
+General Environment (Recommended):
+
+Use the setup_conda_environment(`env_type = "general"`) function.
+This will create a Conda environment with the necessary Python packages, but the specific versions may vary depending on what's available in the package repositories.
+
+This option is recommended as it is more flexible and may be easier to maintain in the long run.
+
+Specific Environment:
+
+Use the setup_conda_environment(`env_type = "specific"`) function.
+
+This will create a Conda environment with a specific set of package versions that are known to work with the SegColR package.
+
+This option is useful if you need to ensure the package works with a specific set of dependencies, but it may be more difficult to maintain over time as package versions are updated.
+
+Once you've run the setup_conda_environment() function, the SegColR package should be ready to use. You can then load the package in your R session and start exploring its functionality, as shown in the examples throughout the vignette.
+
+## Loading Example Data
+
+The SegColR package comes with a dataset of 10 images from iNaturalist, 9 licensed under the CC0 (public domain) license and 1 licensed under the CC BY-NC. We can load this example data using the `load_segcolr_example_data()` function:
+
+```{r}
+library(SegColR)
+library(imager)
+library(RColorBrewer)
+example_data <- load_segcolr_example_data()
+```
+## Example 1 - Guided Segmentation and Color Analysis
+
+The example data contains several images, each stored as an imager::Image object. For this demonstration, we'll use the second image in the dataset:
+
+```{r}
+img <- example_data$images[[2]]
+# View the image
+plot(img, axes = FALSE, main = "Andaman Hind")
+```
+
+As you can see, this image depicts an Andaman Hind fish. However, performing color analysis on the entire image would be quite difficult, as the background would interfere with the color extraction process. To overcome this, we can use the SegColR package's image segmentation capabilities.
+
+The `grounded_segmentation_cli()` function in SegColR performs segmentation using pre-trained models, specifically the Grounding DINO and Segment Anything Model (SAM). This function takes the path to the input image, a vector of labels to detect, and several optional parameters to customize the segmentation process. For the sake of speed when installing the package and vignette, I will not run the the inference here. However, the code below shows how one would run a basic iteration. 
+
+```{r}
+img_path <- example_data$image_paths[2]
+labels <- "a fish."
+file_name <- basename(img_path)
+file_name <- sub("\\.[^.]*$", "", file_name)
+directory <- dirname(img_path)
+json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+
+if(!file.exists(json_path)){
+  ground_results <- grounded_segmentation_cli(img_path,
+    labels,
+    output_json = "/home/jboyko/SegColR/extdata/json/",
+    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  json_path = ground_results$json_path
+}
+```
+
+The segmentation process generates a JSON file containing information about the detected objects, including their masks, labels, and scores. We can then load these segmentation results using the load_segmentation_results() function:
+
+```{r}
+seg_results <- load_segmentation_results(
+  image_path = img_path,
+  json_path = json_path)
+```
+
+
+Now that we have the segmentation results, we can visualize them using the plot_seg_results() function. This function allows you to customize the appearance of the plot, such as the mask colors, background, and the display of labels, scores, and bounding boxes:
+
+```{r}
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0.5,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+```
+
+The resulting plot will show the original image with the segmented regions highlighted and the corresponding labels and scores displayed.
+
+With the image segmented, we can now focus on analyzing the colors present in the detected regions. The process_masks_and_extract_colors() function in SegColR allows us to do this:
+
+```{r}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels,
+  exclude_labels = NULL,
+  score_threshold = 0.5,
+  n_colors = 5
+)
+```
+
+
+This function processes the segmentation masks, extracts the dominant colors in the detected regions, and returns a list containing the original image, the final mask, and the color information.
+
+Finally, you can visualize the extracted color information using the plot_color_info() function:
+
+```{r, fig.width=8, fig.height=5}
+plot_color_info(color_results)
+```
+
+This will create a plot showing the colors present in the segmented regions, along with their relative proportions and RGB values.
+
+## Example 2 - Excluding Objects
+
+It may sometimes be necessary to mask multiple objects and exclude certain types. In this example we want to extract color flower, but there is a bee visiting the flower. If we were to segment only flower, we would likely include the bee as well since the bounding box does not discriminate. However, if we say we want the bee and the flower, then we can get the flower mask and subtract the bee mask from it and get a cleaner color quantification. 
+
+```{r}
+### Example 1 - basic description
+img_path <- example_data$image_paths[1]
+labels <- c("a flower.", "a bee.")
+file_name <- basename(img_path)
+file_name <- sub("\\.[^.]*$", "", file_name)
+directory <- dirname(img_path)
+json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+
+if(!file.exists(json_path)){
+  ground_results <- grounded_segmentation_cli(img_path,
+    labels,
+    output_json = "/home/jboyko/SegColR/extdata/json/",
+    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  json_path = ground_results$json_path
+}
+```
+
+Again load and plot the segmentation results.
+
+```{r}
+seg_results <- load_segmentation_results(
+  image_path = img_path,
+  json_path = json_path)
+
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0.5,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+```
+
+Great we have a bee mask and flower mask. One interesting thing for this image is that it detects far more than what is shown in the above figure. We can see that if we lower the score_threshold:
+
+```{r}
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+```
+
+For our analysis we'll stick with the 0.5 threshold. If we chose not to exlude the bee and only include the flower masks we would get something like this:
+
+```{r, fig.width=8, fig.height=5}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels[1],
+  exclude_labels = NULL,
+  score_threshold = 0.5,
+  n_colors = 5
+)
+
+plot_color_info(color_results)
+```
+
+Clearly we're also picking up on the bee colors. To correct this specify which labels to exclude:
+
+```{r, fig.width=8, fig.height=5}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels[1],
+  exclude_labels = labels[2],
+  score_threshold = 0.5,
+  n_colors = 5
+)
+
+plot_color_info(color_results)
+```
+
+Much better. The bee has been removed from the mask. Note that we have no way to quantify the color underneath the bee, that information is just lost. 
+
+## More examples
+
+SegColR should work on a diverse set of images. And though one may expect that the main limitation is from GroundingDINO and whether or not the term was included in the training data, as we'll see in some of the below examples, the labels are not very precise. But, they still will detect objects and so SegColR is generally pretty good as a background remover. 
+
+So the basic pipeline is really just... 
+
+(1) Segmentation:
+
+```{r}
+img_path <- example_data$image_paths[5]
+labels <- "a gecko."
+file_name <- basename(img_path)
+file_name <- sub("\\.[^.]*$", "", file_name)
+directory <- dirname(img_path)
+json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+
+if(!file.exists(json_path)){
+  ground_results <- grounded_segmentation_cli(img_path,
+    labels,
+    output_json = "/home/jboyko/SegColR/extdata/json/",
+    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  json_path = ground_results$json_path
+}
+
+seg_results <- load_segmentation_results(
+  image_path = img_path,
+  json_path = json_path)
+
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0.5,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+
+```
+
+(2) Color extraction:
+
+```{r, fig.width=8, fig.height=5}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels[1],
+  exclude_labels = labels[2],
+  score_threshold = 0.3,
+  n_colors = 5
+)
+
+plot_color_info(color_results)
+```
+
+(1) Segmentation:
+If no detections are found, that will be printed out. Let's simulate that by setting the threshold unreasonably high for the segmentation result. 
+
+```{r}
+img_path <- example_data$image_paths[6]
+labels <- "a bird."
+file_name <- basename(img_path)
+file_name <- sub("\\.[^.]*$", "", file_name)
+directory <- dirname(img_path)
+json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+
+if(!file.exists(json_path)){
+  ground_results <- grounded_segmentation_cli(img_path,
+    labels,
+    output_json = "/home/jboyko/SegColR/extdata/json/",
+    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  json_path = ground_results$json_path
+}
+
+seg_results <- load_segmentation_results(
+  image_path = img_path,
+  json_path = json_path)
+
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0.99,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+
+```
+
+(2) Color extraction:
+If we lower the threshold back down, we will use any masks that were still found. 
+
+```{r, fig.width=8, fig.height=5}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels[1],
+  exclude_labels = labels[2],
+  score_threshold = 0.3,
+  n_colors = 5
+)
+
+plot_color_info(color_results)
+```
+
+(1) Segmentation:
+
+```{r}
+img_path <- example_data$image_paths[7]
+labels <- "a frog."
+file_name <- basename(img_path)
+file_name <- sub("\\.[^.]*$", "", file_name)
+directory <- dirname(img_path)
+json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+
+if(!file.exists(json_path)){
+  ground_results <- grounded_segmentation_cli(img_path,
+    labels,
+    output_json = "/home/jboyko/SegColR/extdata/json/",
+    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  json_path = ground_results$json_path
+}
+
+seg_results <- load_segmentation_results(
+  image_path = img_path,
+  json_path = json_path)
+
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0.5,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+
+```
+
+(2) Color extraction:
+
+```{r, fig.width=8, fig.height=5}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels[1],
+  exclude_labels = labels[2],
+  score_threshold = 0.3,
+  n_colors = 5
+)
+
+plot_color_info(color_results)
+```
+
+(1) Segmentation:
+
+Pretty vague labels can still be effective.
+
+```{r}
+img_path <- example_data$image_paths[8]
+labels <- "a mammal."
+file_name <- basename(img_path)
+file_name <- sub("\\.[^.]*$", "", file_name)
+directory <- dirname(img_path)
+json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+
+if(!file.exists(json_path)){
+  ground_results <- grounded_segmentation_cli(img_path,
+    labels,
+    output_json = "/home/jboyko/SegColR/extdata/json/",
+    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  json_path = ground_results$json_path
+}
+
+seg_results <- load_segmentation_results(
+  image_path = img_path,
+  json_path = json_path)
+
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0.4,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+
+```
+
+(2) Color extraction:
+
+```{r, fig.width=8, fig.height=5}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels[1],
+  exclude_labels = labels[2],
+  score_threshold = 0.3,
+  n_colors = 5
+)
+
+plot_color_info(color_results)
+```
+
+(1) Segmentation:
+
+"Creative" labels are still effective.
+
+```{r}
+img_path <- example_data$image_paths[9]
+labels <- c("doe. a deer. a female deer.")
+file_name <- basename(img_path)
+file_name <- sub("\\.[^.]*$", "", file_name)
+directory <- dirname(img_path)
+json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+
+if(!file.exists(json_path)){
+  ground_results <- grounded_segmentation_cli(img_path,
+    labels,
+    output_json = "/home/jboyko/SegColR/extdata/json/",
+    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  json_path = ground_results$json_path
+}
+
+seg_results <- load_segmentation_results(
+  image_path = img_path,
+  json_path = json_path)
+
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0.4,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+
+```
+
+(2) Color extraction:
+
+```{r, fig.width=8, fig.height=5}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels[1],
+  exclude_labels = labels[2],
+  score_threshold = 0.3,
+  n_colors = 5
+)
+
+plot_color_info(color_results)
+```
+
+(1) Segmentation:
+
+And concerningly, nonsensical labels will still draw boudning boxes around whatever object is in the image. 
+
+```{r}
+img_path <- example_data$image_paths[10]
+labels <- c("a camera.")
+file_name <- basename(img_path)
+file_name <- sub("\\.[^.]*$", "", file_name)
+directory <- dirname(img_path)
+json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+
+if(!file.exists(json_path)){
+  ground_results <- grounded_segmentation_cli(img_path,
+    labels,
+    output_json = "/home/jboyko/SegColR/extdata/json/",
+    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  json_path = ground_results$json_path
+}
+
+seg_results <- load_segmentation_results(
+  image_path = img_path,
+  json_path = json_path)
+
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0.5,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+
+```
+
+(2) Color extraction:
+
+```{r, fig.width=8, fig.height=5}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels[1],
+  exclude_labels = labels[2],
+  score_threshold = 0.3,
+  n_colors = 5
+)
+
+plot_color_info(color_results)
+```
+
+## References
+
+
+

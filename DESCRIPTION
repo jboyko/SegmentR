@@ -21,4 +21,6 @@ Imports:
     reticulate,
     imager,
     jsonlite,
+    RColorBrewer,
 SystemRequirements: Python (>= 3.8), Conda
+data: /extdata/

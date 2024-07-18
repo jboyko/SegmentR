@@ -2,22 +2,22 @@
 % Please edit documentation in R/image_analysis.R
 \name{combine_masks}
 \alias{combine_masks}
-\title{Combine masks based on a probability threshold}
+\title{Combine masks based on a score threshold}
 \usage{
-combine_masks(masks, probabilities, threshold = 0.5)
+combine_masks(masks, scores, threshold = 0.5)
 }
 \arguments{
 \item{masks}{List of logical matrices representing individual masks.}
 
-\item{probabilities}{Numeric vector of probabilities corresponding to each mask.}
+\item{scores}{Numeric vector of scores corresponding to each mask.}
 
-\item{threshold}{Numeric. The probability threshold for including a mask (default: 0.5).}
+\item{threshold}{Numeric. The score threshold for including a mask (default: 0.5).}
 }
 \value{
 A logical matrix representing the combined mask.
 }
 \description{
-This function combines all masks that meet or exceed a specified probability threshold.
+This function combines all masks that meet or exceed a specified score threshold.
 }
 \examples{
 \dontrun{

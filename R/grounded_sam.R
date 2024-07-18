@@ -5,10 +5,8 @@
 #' @param image_path Character string. Path to the input image.
 #' @param labels Character vector. Labels to detect in the image.
 #' @param threshold Numeric. Detection threshold (default: 0.3).
-#' @param polygon_refinement Logical. Whether to refine polygons (default: FALSE).
 #' @param detector_id Character string. ID of the detector model.
 #' @param segmenter_id Character string. ID of the segmenter model.
-#' @param script_path Character string. Path to the Python script.
 #' @param output_plot Character string. Path or directory to save the output plot.
 #' @param output_json Character string. Path or directory to save the output JSON.
 #' @param conda_env Character string. Name of the conda environment to use.
@@ -18,16 +16,16 @@
 grounded_segmentation_cli <- function(image_path,
   labels,
   threshold = 0.3,
-  polygon_refinement = FALSE,
   detector_id = "IDEA-Research/grounding-dino-tiny",
   segmenter_id = "Zigeng/SlimSAM-uniform-77",
-  script_path = system.file("python/main.py", package = "SegColR"),
   output_plot = NULL,
   output_json = NULL,
   conda_env = "segcolr-env") {
 
   # normalize to absolute paths
   image_path <- normalizePath(image_path)
+  polygon_refinement = FALSE
+  script_path = system.file("python/main.py", package = "SegColR")
 
   # Ensure the script path is correct
   if (!file.exists(script_path)) {

@@ -1,5 +1,3 @@
-#' @importFrom imager load.image
-#' @importFrom jsonlite fromJSON
 #' Load an image file
 #'
 #' This function loads an image file and returns it as an array.
@@ -29,7 +27,6 @@ load_image <- function(image_path) {
 #'
 #' @param image_path Character string. Path to the original image file.
 #' @param json_path Character string. Path to the JSON file containing segmentation results.
-#' @param mask_format Character string. Format of the mask files. Either "image" or "binary".
 #'
 #' @return A list containing the original image, segmentation results, and masks.
 #' @export
@@ -39,10 +36,9 @@ load_image <- function(image_path) {
 #' results <- load_segmentation_results(
 #'   image_path = "path/to/image.jpg",
 #'   json_path = "path/to/results.json",
-#'   mask_format = "image"
 #' )
 #' }
-load_segmentation_results <- function(image_path, json_path, mask_format = "image") {
+load_segmentation_results <- function(image_path, json_path) {
   # Load image
   image <- load_image(image_path)
 
@@ -57,4 +53,39 @@ load_segmentation_results <- function(image_path, json_path, mask_format = "imag
     box = results$box,
     mask = results$mask
   )
+}
+
+
+#' Load the SegColR example dataset
+#'
+#' @return A list containing the example images, their file paths, and photographer credits.
+#' @export
+load_segcolr_example_data <- function() {
+  image_paths <- list.files(
+    system.file("extdata", "images", package = "SegColR"),
+    full.names = TRUE
+  )
+  image_list <- lapply(image_paths, imager::load.image)
+  photographer_credits <- c(
+    "Andaman Hind" = "Observation by fishhead (CC0)",
+    "Middle Eastern Short-fingered Gecko" = "Observation by Marius Burger (CC0)",
+    "South African Ground Squirrel" = "Observation by dune_ninja (CC0)",
+
+    "White-tailed Deer" = "Observation by Brady Reed (CC0)",
+    "Horned Bream" = "Observation by Michael Bommerer (CC0)",
+    "Bumble Bees" = "Observation by theo JF (CC0)",
+
+    "Yellow-footed Gull" = "Observation by Irene (CC0)",
+    "Northern Flicker" = "Observation by Guerric Haché (CC0)",
+    "Family Phacotaceae" = "Observation by onotole (CC0)",
+
+    "Northern Leopard Frog" = "Observation by Dr. Ben R. Goldstein (CC0)",
+    "American Bumble Bee" = "Observation by Mary Spolyar (CC BY-NC)"
+    # Add more credits here
+  )
+  return(list(
+    images = image_list,
+    image_paths = image_paths,
+    photographer_credits = photographer_credits
+  ))
 }

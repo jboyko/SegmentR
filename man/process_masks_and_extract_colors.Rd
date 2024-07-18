@@ -7,12 +7,14 @@
 process_masks_and_extract_colors(
   image,
   masks,
-  probabilities,
+  scores,
   labels,
   include_labels,
   exclude_labels = NULL,
-  probability_threshold = 0.5,
-  n_colors = 5
+  exclude_boxes = NULL,
+  score_threshold = 0.5,
+  n_colors = 5,
+  custom_colors = NULL
 )
 }
 \arguments{
@@ -20,7 +22,7 @@ process_masks_and_extract_colors(
 
 \item{masks}{List of logical matrices representing individual masks.}
 
-\item{probabilities}{Numeric vector of probabilities corresponding to each mask.}
+\item{scores}{Numeric vector of scores corresponding to each mask.}
 
 \item{labels}{Character vector of labels corresponding to each mask.}
 
@@ -28,9 +30,13 @@ process_masks_and_extract_colors(
 
 \item{exclude_labels}{Character vector of labels to exclude.}
 
-\item{probability_threshold}{Numeric. The probability threshold for including a mask (default: 0.5).}
+\item{exclude_boxes}{Numeric. Specifies which bounding boxes should be removed manually rather than by score threshold.}
+
+\item{score_threshold}{Numeric. The score threshold for including a mask (default: 0.5).}
 
 \item{n_colors}{Integer. Number of dominant colors to extract (default: 5).}
+
+\item{custom_colors}{Character vector. Optional. Hex codes of colors to use for clustering instead of k-means.}
 }
 \value{
 A list containing the final mask and extracted color information.
@@ -44,11 +50,11 @@ from the resulting masked area of an image.
 results <- process_masks_and_extract_colors(
   image = seg_results$image,
   masks = seg_results$masks,
-  probabilities = seg_results$results$scores,
+  scores = seg_results$results$scores,
   labels = seg_results$results$labels,
   include_labels = c("flower"),
   exclude_labels = c("bee"),
-  probability_threshold = 0.6,
+  score_threshold = 0.6,
   n_colors = 3
 )
 }
