@@ -91,7 +91,18 @@ As you can see, this image depicts an Andaman Hind fish. However, performing col
 
 The `grounded_segmentation_cli()` function in SegColR performs segmentation using pre-trained models, specifically the Grounding DINO and Segment Anything Model (SAM). This function takes the path to the input image, a vector of labels to detect, and several optional parameters to customize the segmentation process. For the sake of speed when installing the package and vignette, I will not run the the inference here. However, the code below shows how one would run a basic iteration. 
 
+```{r, eval=FALSE}
+# not run because it'll take too long for a vignette
+ground_results <- grounded_segmentation_cli(
+  image_path = example_data$image_paths[2],
+  labels = "a fish.",
+  output_json = "/home/jboyko/SegColR/extdata/json/",
+  output_plot = "/home/jboyko/SegColR/extdata/plot/")
+```
+
+
 ```{r}
+# previous results have been saved
 img_path <- example_data$image_paths[2]
 labels <- "a fish."
 file_name <- basename(img_path)
@@ -100,7 +111,8 @@ directory <- dirname(img_path)
 json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
 
 if(!file.exists(json_path)){
-  ground_results <- grounded_segmentation_cli(img_path,
+  ground_results <- grounded_segmentation_cli(
+    img_path,
     labels,
     output_json = "/home/jboyko/SegColR/extdata/json/",
     output_plot = "/home/jboyko/SegColR/extdata/plot/")
@@ -167,7 +179,6 @@ This will create a plot showing the colors present in the segmented regions, alo
 It may sometimes be necessary to mask multiple objects and exclude certain types. In this example we want to extract color flower, but there is a bee visiting the flower. If we were to segment only flower, we would likely include the bee as well since the bounding box does not discriminate. However, if we say we want the bee and the flower, then we can get the flower mask and subtract the bee mask from it and get a cleaner color quantification. 
 
 ```{r}
-### Example 1 - basic description
 img_path <- example_data$image_paths[1]
 labels <- c("a flower.", "a bee.")
 file_name <- basename(img_path)
@@ -595,8 +606,4 @@ color_results <- process_masks_and_extract_colors(
 
 plot_color_info(color_results)
 ```
-
-## References
-
-
 

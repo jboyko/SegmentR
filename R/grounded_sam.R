@@ -45,14 +45,18 @@ grounded_segmentation_cli <- function(image_path,
   file_name <- sub("\\.[^.]*$", "", file_name)
   directory <- dirname(image_path)
   if (is.null(output_plot)) {
-    output_plot <- file.path(directory, paste0("segcolr_plot_", file_name, ".png"))
+    output_plot <- file.path(directory,
+      paste0("segcolr_plot_", file_name, ".png"))
   } else if (dir.exists(output_plot)) {
-    output_plot <- file.path(output_plot, paste0("segcolr_plot_", file_name, ".png"))
+    output_plot <- file.path(output_plot,
+      paste0("segcolr_plot_", file_name, ".png"))
   }
   if (is.null(output_json)) {
-    output_json <- file.path(directory, paste0("segcolr_output_", file_name, ".json"))
+    output_json <- file.path(directory,
+      paste0("segcolr_output_", file_name, ".json"))
   } else if (dir.exists(output_json)) {
-    output_json <- file.path(output_json, paste0("segcolr_output_", file_name, ".json"))
+    output_json <- file.path(output_json,
+      paste0("segcolr_output_", file_name, ".json"))
   }
 
   # Check if the conda environment exists

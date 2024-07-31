@@ -27,11 +27,13 @@ plot_seg_results <- function(seg_results,
   default_par <- par(no.readonly = TRUE)
 
   # Prepare background
+  original = imager::as.cimg(seg_results$image)
+  original = imager::flatten.alpha(original)
   bg <- switch(background,
-    "original" = imager::as.cimg(seg_results$image),
-    "grayscale" = imager::grayscale(imager::as.cimg(seg_results$image)),
-    "transparent" = imager::imfill(dim = dim(imager::as.cimg(seg_results$image)), val = 0),
-    imager::imfill(dim = dim(imager::as.cimg(seg_results$image)), val = col2rgb(background) / 255))
+    "original" = original,
+    "grayscale" = imager::grayscale(original),
+    "transparent" = imager::imfill(dim = dim(original), val = 0),
+    imager::imfill(dim = dim(original), val = col2rgb(background) / 255))
 
   # Prepare color palette
   if (length(mask_colors) == 1 && mask_colors %in% rownames(RColorBrewer::brewer.pal.info)) {
