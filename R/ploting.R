@@ -1,7 +1,5 @@
 #' Plot Segmentation Results
-#'
 #' This function creates a plot of segmentation results with various customization options using base R graphics.
-#'
 #' @param seg_results A list containing segmentation results (image, label, score, box, mask).
 #' @param mask_colors A named vector of colors for each label, or a color palette name from RColorBrewer.
 #' @param background One of "original", "grayscale", "transparent", or a specific color.

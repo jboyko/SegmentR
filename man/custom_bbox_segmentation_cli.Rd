@@ -18,7 +18,7 @@ custom_bbox_segmentation_cli(
 \arguments{
 \item{image_path}{Character string. Path to the input image.}
 
-\item{bbox}{Numeric vector. Custom bounding box coordinates \link{xmin, ymin, xmax, ymax}.}
+\item{bbox}{Numeric vector. Custom bounding box coordinates = xmin, ymin, xmax, ymax.}
 
 \item{polygon_refinement}{Logical. Whether to refine polygons (default: FALSE).}
 

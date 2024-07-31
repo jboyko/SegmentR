@@ -100,7 +100,7 @@ grounded_segmentation_cli <- function(image_path,
 #' This function performs segmentation on an image using a custom bounding box.
 #'
 #' @param image_path Character string. Path to the input image.
-#' @param bbox Numeric vector. Custom bounding box coordinates [xmin, ymin, xmax, ymax].
+#' @param bbox Numeric vector. Custom bounding box coordinates = xmin, ymin, xmax, ymax.
 #' @param polygon_refinement Logical. Whether to refine polygons (default: FALSE).
 #' @param segmenter_id Character string. ID of the segmenter model.
 #' @param script_path Character string. Path to the Python script.

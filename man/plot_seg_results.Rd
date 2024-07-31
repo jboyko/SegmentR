@@ -2,7 +2,8 @@
 % Please edit documentation in R/ploting.R
 \name{plot_seg_results}
 \alias{plot_seg_results}
-\title{Plot Segmentation Results}
+\title{Plot Segmentation Results
+This function creates a plot of segmentation results with various customization options using base R graphics.}
 \usage{
 plot_seg_results(
   seg_results,
@@ -42,5 +43,6 @@ plot_seg_results(
 Invisibly returns NULL, called for side effect of plotting.
 }
 \description{
+Plot Segmentation Results
 This function creates a plot of segmentation results with various customization options using base R graphics.
 }
