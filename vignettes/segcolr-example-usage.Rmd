@@ -329,6 +329,64 @@ color_results <- process_masks_and_extract_colors(
 plot_color_info(color_results)
 ```
 
+One particularly interesting test case of segcolr is the ability to remove "parts" of an animal. For example, removing the fins of a fish so that you can access only the color. 
+
+(1) Segmentation:
+
+```{r}
+img_path <- example_data$image_paths[4]
+labels <- c("a fish.", "the fins of a fish.")
+file_name <- basename(img_path)
+file_name <- sub("\\.[^.]*$", "", file_name)
+directory <- dirname(img_path)
+json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+
+if(!file.exists(json_path)){
+  ground_results <- grounded_segmentation_cli(img_path,
+    c("a fish.", "the fins of a fish."),
+    output_json = "/home/jboyko/SegColR/inst/extdata/json/",
+    output_plot = "/home/jboyko/SegColR/inst/extdata/plot/")
+  json_path = ground_results$json_path
+}
+
+seg_results <- load_segmentation_results(
+  image_path = img_path,
+  json_path = json_path
+)
+
+plot_seg_results(
+  seg_results = seg_results,
+  mask_colors = "Set1",
+  background = "grayscale",
+  show_label = TRUE,
+  show_score = TRUE,
+  show_bbox = TRUE,
+  score_threshold = 0,
+  label_size = 1.2,
+  bbox_thickness = 2,
+  mask_alpha = 0.3
+)
+```
+
+(2) Color extraction:
+
+```{r, fig.width=8, fig.height=5}
+color_results <- process_masks_and_extract_colors(
+  image = seg_results$image,
+  masks = seg_results$mask,
+  scores = seg_results$score,
+  labels = seg_results$label,
+  include_labels = labels,
+  exclude_labels = labels[2],
+  exclude_boxes = 2,
+  score_threshold = 0,
+  n_colors = 5
+)
+
+plot_color_info(color_results, FALSE, TRUE)
+```
+
+
 (1) Segmentation:
 If no detections are found, that will be printed out. Let's simulate that by setting the threshold unreasonably high for the segmentation result. 
 

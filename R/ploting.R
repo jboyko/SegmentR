@@ -204,14 +204,16 @@ plot_color_info <- function(color_results, horiz=TRUE, repainted=TRUE) {
 #'
 #' @return Array. The repainted image (height x width x channels).
 #' @export
-plot_repainted_mask <- function(image, final_mask, color_info) {
+plot_repainted_mask <- function(image, final_mask, color_info, verbose=FALSE) {
   # Create a new image the same size as the original
   repainted_image <- as.cimg(array(1, dim = c(nrow(image), ncol(image), 1, 3)))
   ind_mat <- final_mask
   ind_mat[final_mask == 1] <- 1:sum(final_mask)
   col_mat <- t(col2rgb(color_info$dominant_color_info$hex_color[color_info$km_result$cluster]))/255
   for(i in 1:nrow(final_mask)){
-    cat("\rProcessing:", round(i/nrow(final_mask) * 100), "%...")
+    if(verbose){
+      cat("\rProcessing:", round(i/nrow(final_mask) * 100), "%...")
+    }
     repainted_image[i, which(final_mask[i,]), 1, ] <- col_mat[ind_mat[i,which(final_mask[i,])],]
   }
   # if(crop){
