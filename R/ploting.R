@@ -7,6 +7,7 @@
 #' @param show_score Logical. Whether to display scores
 #' @param show_bbox Logical. Whether to display bounding boxes.
 #' @param score_threshold Numeric. Threshold for displaying results (0-1).
+#' @param exclude_boxes Numeric. Specifies which object detections should not be plotted.
 #' @param label_size Numeric. Size of label text.
 #' @param bbox_thickness Numeric. Thickness of bounding box lines.
 #' @param mask_alpha Numeric. Transparency of mask overlays (0-1).
@@ -20,6 +21,7 @@ plot_seg_results <- function(seg_results,
   show_score = TRUE,
   show_bbox = TRUE,
   score_threshold = 0,
+  exclude_boxes = NULL,
   label_size = 1,
   bbox_thickness = 2,
   mask_alpha = 0.3) {
@@ -58,27 +60,29 @@ plot_seg_results <- function(seg_results,
   plot(bg, axes=FALSE)
 
   for (i in seq_along(seg_results$label)) {
-    if (seg_results$score[i] >= score_threshold) {
-      # Add bounding box if requested
-      if (show_bbox) {
-        box <- seg_results$box[i, ]
-        rect(box$xmin, box$ymin, box$xmax, box$ymax,
-          border = mask_colors[seg_results$label[i]],
-          lwd = bbox_thickness)
-      }
+    if(!(i %in% exclude_boxes)){
+      if (seg_results$score[i] >= score_threshold) {
+        # Add bounding box if requested
+        if (show_bbox) {
+          box <- seg_results$box[i, ]
+          rect(box$xmin, box$ymin, box$xmax, box$ymax,
+            border = mask_colors[seg_results$label[i]],
+            lwd = bbox_thickness)
+        }
 
-      # Add label and score if requested
-      if (show_score) {
-        label_text <- sprintf("%s: %.2f", seg_results$label[i], seg_results$score[i])
-      } else {
-        label_text <- seg_results$label[i]
-      }
+        # Add label and score if requested
+        if (show_score) {
+          label_text <- sprintf("%s: %.2f", seg_results$label[i], seg_results$score[i])
+        } else {
+          label_text <- seg_results$label[i]
+        }
 
-      # add labels if requested
-      if (show_label){
-        text(seg_results$box$xmin[i], seg_results$box$ymin[i], label_text,
-          col = mask_colors[seg_results$label[i]],
-          adj = c(0, 1), cex = label_size)
+        # add labels if requested
+        if (show_label){
+          text(seg_results$box$xmin[i], seg_results$box$ymin[i], label_text,
+            col = mask_colors[seg_results$label[i]],
+            adj = c(0, 1), cex = label_size)
+        }
       }
     }
   }

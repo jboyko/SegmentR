@@ -13,6 +13,7 @@ plot_seg_results(
   show_score = TRUE,
   show_bbox = TRUE,
   score_threshold = 0,
+  exclude_boxes = NULL,
   label_size = 1,
   bbox_thickness = 2,
   mask_alpha = 0.3
@@ -32,6 +33,8 @@ plot_seg_results(
 \item{show_bbox}{Logical. Whether to display bounding boxes.}
 
 \item{score_threshold}{Numeric. Threshold for displaying results (0-1).}
+
+\item{exclude_boxes}{Numeric. Specifies which object detections should not be plotted.}
 
 \item{label_size}{Numeric. Size of label text.}
 

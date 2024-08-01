@@ -4,7 +4,7 @@
 \alias{plot_repainted_mask}
 \title{Repaint Masked Image with Dominant Colors}
 \usage{
-plot_repainted_mask(image, final_mask, color_info)
+plot_repainted_mask(image, final_mask, color_info, verbose = FALSE)
 }
 \arguments{
 \item{image}{Array. The original image (height x width x channels).}
