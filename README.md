@@ -1,8 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: sentence
----
 ------------------------------------------------------------------------
 
 # SegColR: A Package for Image Segmentation
@@ -137,4 +132,5 @@ plot_color_info(color_results)
 ![This plot displays the colors in the segmented regions, showing their proportions and RGB values.](https://i.imgur.com/mxe4DNO.png)
 
 This is only a very basic color analysis and other R packages such as `recolorize` may be better suited for downstream analyses. 
+
 ---
