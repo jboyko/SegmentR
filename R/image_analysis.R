@@ -55,6 +55,9 @@ exclude_masks <- function(combined_mask, exclude_masks) {
 #' @param custom_colors Character vector. Optional. Hex codes of colors to use for clustering instead of k-means.
 #'
 #' @return A list containing color information including dominant colors and color statistics.
+#' @importFrom grDevices col2rgb convertColor rgb
+#' @importFrom stats kmeans median
+#' @importFrom imager as.cimg
 #' @export
 #'
 #' @examples

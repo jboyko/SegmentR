@@ -13,6 +13,8 @@
 #' @param mask_alpha Numeric. Transparency of mask overlays (0-1).
 #'
 #' @return Invisibly returns NULL, called for side effect of plotting.
+#' @importFrom graphics par rect text
+#' @importFrom grDevices col2rgb
 #' @export
 plot_seg_results <- function(seg_results,
   mask_colors = "Set1",
@@ -108,6 +110,8 @@ plot_seg_results <- function(seg_results,
 #' @param horiz Logical. Whether the mask and original image should be arranged horizontally or vertically.
 #'
 #' @return Invisibly returns NULL, called for side effect of plotting.
+#' @importFrom graphics axis box hist layout par rect text
+#' @importFrom imager as.cimg
 #' @export
 plot_color_info <- function(color_results, horiz=TRUE, repainted=TRUE) {
   default_par <- par(no.readonly = TRUE)
@@ -205,8 +209,11 @@ plot_color_info <- function(color_results, horiz=TRUE, repainted=TRUE) {
 #' @param image Array. The original image (height x width x channels).
 #' @param final_mask Logical matrix. The final mask specifying which pixels to consider.
 #' @param color_info List. The dominant color information, including kmeans result.
+#' @param verbose Logical. Whether to print a percent for processing.
 #'
 #' @return Array. The repainted image (height x width x channels).
+#' @importFrom imager as.cimg
+#' @importFrom grDevices col2rgb
 #' @export
 plot_repainted_mask <- function(image, final_mask, color_info, verbose=FALSE) {
   # Create a new image the same size as the original

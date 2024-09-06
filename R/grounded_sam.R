@@ -59,14 +59,23 @@ grounded_segmentation_cli <- function(image_path,
       paste0("segcolr_output_", file_name, ".json"))
   }
 
-  # Check if the conda environment exists
-  if (!reticulate::condaenv_exists(conda_env)) {
+  # Find conda path
+  conda_path <- search_conda_locations()
+  if (is.null(conda_path)) {
+    stop("Conda executable not found. Please install Conda or provide the path manually.")
+  }
+  # Check if the Conda environment exists
+  cmd_check_env <- sprintf('%s env list | grep -q "%s"', conda_path, conda_env)
+  env_exists <- system(cmd_check_env, ignore.stderr = TRUE)
+
+  if (env_exists != 0) {
     stop("Specified conda environment '", conda_env, "' does not exist. ",
       "Please create it using setup_conda_environment() function.")
   }
 
-  # Construct the command to run the script in the conda environment
-  cmd <- sprintf("conda run -n %s python %s --image %s --labels '%s' --threshold %f --save_plot %s --save_json %s",
+  # Construct the command to run the script in the Conda environment
+  cmd <- sprintf("%s run -n %s python %s --image %s --labels '%s' --threshold %f --save_plot %s --save_json %s",
+    conda_path,
     conda_env,
     shQuote(script_path),
     shQuote(image_path),
@@ -74,6 +83,7 @@ grounded_segmentation_cli <- function(image_path,
     threshold,
     shQuote(output_plot),
     shQuote(output_json))
+
   # Add optional arguments
   if (polygon_refinement) cmd <- paste(cmd, "--polygon_refinement")
   if (!is.null(detector_id)) cmd <- paste(cmd, sprintf("--detector_id %s", shQuote(detector_id)))

@@ -12,6 +12,8 @@ plot_repainted_mask(image, final_mask, color_info, verbose = FALSE)
 \item{final_mask}{Logical matrix. The final mask specifying which pixels to consider.}
 
 \item{color_info}{List. The dominant color information, including kmeans result.}
+
+\item{verbose}{Logical. Whether to print a percent for processing.}
 }
 \value{
 Array. The repainted image (height x width x channels).

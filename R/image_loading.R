@@ -67,20 +67,9 @@ load_segcolr_example_data <- function() {
   )
   image_list <- lapply(image_paths, imager::load.image)
   photographer_credits <- c(
-    "Andaman Hind" = "Observation by fishhead (CC0)",
-    "Middle Eastern Short-fingered Gecko" = "Observation by Marius Burger (CC0)",
-    "South African Ground Squirrel" = "Observation by dune_ninja (CC0)",
-
-    "White-tailed Deer" = "Observation by Brady Reed (CC0)",
-    "Horned Bream" = "Observation by Michael Bommerer (CC0)",
-    "Bumble Bees" = "Observation by theo JF (CC0)",
-
-    "Yellow-footed Gull" = "Observation by Irene (CC0)",
-    "Northern Flicker" = "Observation by Guerric Haché (CC0)",
-    "Family Phacotaceae" = "Observation by onotole (CC0)",
-
-    "Northern Leopard Frog" = "Observation by Dr. Ben R. Goldstein (CC0)",
-    "American Bumble Bee" = "Observation by Mary Spolyar (CC BY-NC)"
+    "Andaman Hind" = "Observation by fishhead (CC0) - https://www.inaturalist.org/observations/226199473",
+    "American Bumble Bee" = "Observation by Mary Spolyar (CC BY-NC) - https://www.inaturalist.org/observations/100024260",
+    "Horned Bream" = "Observation by Michael Bommerer (CC BY) - https://www.inaturalist.org/observations/227272077"
     # Add more credits here
   )
   return(list(

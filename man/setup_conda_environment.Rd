@@ -20,5 +20,5 @@ if it already exists. Default is FALSE.}
 Invisible NULL. The function is called for its side effects.
 }
 \description{
-This function creates a conda environment for SegColR based on the specified YAML file.
+This function creates a Conda environment for SegColR based on the specified YAML file.
 }
