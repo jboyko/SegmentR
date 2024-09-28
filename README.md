@@ -4,6 +4,8 @@
 
 The **SegColR** package is a tool for image segmentation and color extraction. SegColR is built on two pretrained models: [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) and [Segment Anything Model (SAM)](https://github.com/facebookresearch/segment-anything). Specifically, we use a lighter version of SAM called [SlimSAM](https://github.com/czg1225/SlimSAM), which uses fewer parameters but achieves similar results.
 
+More details on SegColR can be found here: https://www.biorxiv.org/content/10.1101/2024.07.28.605475v1
+
 ## Installing the Package
 
 To install the SegColR package from GitHub, use the following command in R:
