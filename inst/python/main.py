@@ -36,7 +36,14 @@ def main(args):
             threshold=args.threshold,
             detector_id=args.detector_id
         )
-    
+        # If no detections found, return empty results
+    if not detection_results:
+        if args.save_json:
+            with open(args.save_json, 'w') as f:
+                json.dump([], f)
+        print("No detections found.")
+        return
+
     # Run segmentation
     segmentation_results = segment(
         image=image,

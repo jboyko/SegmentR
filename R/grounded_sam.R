@@ -1,3 +1,106 @@
+#' Run grounded segmentation on an image or folder of images
+#'
+#' @param path Character string. Path to an input image or directory containing images.
+#' @param labels Character vector. Labels to detect in the image.
+#' @param threshold Numeric. Detection threshold (default: 0.3).
+#' @param detector_id Character string. ID of the detector model.
+#' @param segmenter_id Character string. ID of the segmenter model.
+#' @param output_plot Character string. Path or directory to save the output plot.
+#' @param output_json Character string. Path or directory to save the output JSON.
+#' @param show_plot Boolean. Whether a plot should automatically be shown after a segmentation.
+#' @param create_dir Boolean. If the output directory doesn't exist, one will be created.
+#' @param conda_env Character string. Name of the conda environment to use.
+#' @param pattern Character string. File pattern to match when path is a directory (default: "\\.(jpg|jpeg|png)$").
+#' @param recursive Boolean. Whether to search for images recursively in subdirectories (default: FALSE).
+#'
+#' @return A list containing results for each processed image.
+#' @export
+run_grounded_segmentation <- function(path,
+  labels,
+  threshold = 0.3,
+  detector_id = "IDEA-Research/grounding-dino-tiny",
+  segmenter_id = "Zigeng/SlimSAM-uniform-77",
+  output_plot = NULL,
+  output_json = NULL,
+  show_plot = FALSE,
+  create_dir = TRUE,
+  conda_env = "segmentr-env",
+  pattern = "\\.(jpg|jpeg|png)$",
+  recursive = FALSE) {
+  
+  # Check if path exists
+  if (!file.exists(path)) {
+    stop("The specified path does not exist: ", path)
+  }
+  
+  # Handle directory case
+  if (dir.exists(path)) {
+    # Find all image files in the directory
+    files <- list.files(
+      path = path,
+      pattern = pattern,
+      full.names = TRUE,
+      recursive = recursive,
+      ignore.case = TRUE
+    )
+    
+    if (length(files) == 0) {
+      stop("No image files found in directory: ", path)
+    }
+    
+    # Initialize results list
+    results <- list()
+    
+    # Process each image
+    for (i in seq_along(files)) {
+      cat(sprintf("\nProcessing image %d of %d: %s\n", 
+        i, 
+        length(files), 
+        basename(files[i])))
+      
+      # Run segmentation for each image
+      results[[basename(files[i])]] <- grounded_segmentation_cli(
+        image_path = files[i],
+        labels = labels,
+        threshold = threshold,
+        detector_id = detector_id,
+        segmenter_id = segmenter_id,
+        output_plot = output_plot,
+        output_json = output_json,
+        show_plot = show_plot,
+        create_dir = create_dir,
+        conda_env = conda_env
+      )
+    }
+    
+    # Add summary information
+    results$summary <- list(
+      total_images = length(files),
+      processed_images = length(results) - 1,  # Subtract 1 for summary
+      source_directory = normalizePath(path),
+      pattern_used = pattern,
+      recursive = recursive
+    )
+    
+    return(results)
+    
+  } else {
+    # Handle single image case
+    return(grounded_segmentation_cli(
+      image_path = path,
+      labels = labels,
+      threshold = threshold,
+      detector_id = detector_id,
+      segmenter_id = segmenter_id,
+      output_plot = output_plot,
+      output_json = output_json,
+      show_plot = show_plot,
+      create_dir = create_dir,
+      conda_env = conda_env
+    ))
+  }
+}
+
 #' Perform Grounded Segmentation via Command Line Interface
 #'
 #' This function performs grounded segmentation on an image using a Python backend.
@@ -132,6 +235,94 @@ grounded_segmentation_cli <- function(image_path,
     json_path = output_json
   )
 }
+#' Get expected output paths for grounded segmentation
+#'
+#' @param path Character string. Path to an input image or directory containing images.
+#' @param output_plot Character string. Path or directory for output plots (default: NULL creates "plots" subdirectory).
+#' @param output_json Character string. Path or directory for output JSONs (default: NULL creates "json" subdirectory).
+#' @param pattern Character string. File pattern to match when path is a directory (default: "\\.(jpg|jpeg|png)$").
+#' @param recursive Boolean. Whether to search for images recursively in subdirectories (default: FALSE).
+#'
+#' @return A list containing expected file paths for each image
+#' @export
+get_segmentation_paths <- function(path,
+  output_plot = NULL,
+  output_json = NULL,
+  pattern = "\\.(jpg|jpeg|png)$",
+  recursive = FALSE) {
+  
+  # Check if path exists
+  if (!file.exists(path)) {
+    stop("The specified path does not exist: ", path)
+  }
+  
+  # Function to generate paths for a single image
+  generate_paths <- function(image_path) {
+    file_name <- basename(image_path)
+    file_name <- sub("\\.[^.]*$", "", file_name)
+    directory <- dirname(image_path)
+    
+    # Generate plot path
+    if (is.null(output_plot)) {
+      plot_path <- file.path(directory, "plots", 
+        paste0("segmentr_plot_", file_name, ".png"))
+    } else {
+      plot_path <- file.path(output_plot, 
+        paste0("segmentr_plot_", file_name, ".png"))
+    }
+    
+    # Generate JSON path
+    if (is.null(output_json)) {
+      json_path <- file.path(directory, "json", 
+        paste0("segmentr_output_", file_name, ".json"))
+    } else {
+      json_path <- file.path(output_json, 
+        paste0("segmentr_output_", file_name, ".json"))
+    }
+    
+    list(
+      image_path = normalizePath(image_path, mustWork = TRUE),
+      plot_path = normalizePath(plot_path, mustWork = FALSE),
+      json_path = normalizePath(json_path, mustWork = FALSE)
+    )
+  }
+  
+  # Handle directory case
+  if (dir.exists(path)) {
+    # Find all image files in the directory
+    files <- list.files(
+      path = path,
+      pattern = pattern,
+      full.names = TRUE,
+      recursive = recursive,
+      ignore.case = TRUE
+    )
+    
+    if (length(files) == 0) {
+      stop("No image files found in directory: ", path)
+    }
+    
+    # Generate paths for each image
+    results <- lapply(files, generate_paths)
+    names(results) <- basename(files)
+    
+    # Add summary information
+    results$summary <- list(
+      total_images = length(files),
+      source_directory = normalizePath(path),
+      pattern_used = pattern,
+      recursive = recursive,
+      output_plot_dir = if(is.null(output_plot)) file.path(path, "plots") else output_plot,
+      output_json_dir = if(is.null(output_json)) file.path(path, "json") else output_json
+    )
+    
+    return(results)
+    
+  } else {
+    # Handle single image case
+    return(generate_paths(path))
+  }
+}
 #' Perform Custom Bounded Box Segmentation
 #'
 #' This function performs segmentation on an image using a custom bounding box.
@@ -146,7 +337,6 @@ grounded_segmentation_cli <- function(image_path,
 #' @param conda_env Character string. Name of the conda environment to use.
 #'
 #' @return A list containing the segmentation results.
-#' @export
 custom_bbox_segmentation_cli <- function(image_path,
                                          bbox,
                                          polygon_refinement = FALSE,
