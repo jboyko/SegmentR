@@ -1,11 +1,11 @@
 ---
-title: "Using the SegColR Package"
+title: "Using the SegmentR Package"
 author: "James Boyko"
 date: "`r Sys.Date()`"
 bibliography: bibliography.bib
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using the SegColR Package}
+  %\VignetteIndexEntry{Using the SegmentR Package}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,9 +17,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-## SegColR
+## SegmentR
 
-The SegColR package is a tool for image segmentation and color extraction. In this vignette, we'll walk through an example of how to use the package's key features. SegColR is built off of 2 pretrained models: [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) [@liu2023grounding] and [SegmentAnything.](https://github.com/facebookresearch/segment-anything) [@kirillov2023segany]. Specifically, I use a lighter version of SegmentAnything called [SlimSAM](https://github.com/czg1225/SlimSAM) [@chen20230] which uses a fraction of the parameters and achieves similar results as the original SAM. 
+The SegmentR package is a tool for image segmentation and color extraction. In this vignette, we'll walk through an example of how to use the package's key features. SegmentR is built off of 2 pretrained models: [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) [@liu2023grounding] and [SegmentAnything.](https://github.com/facebookresearch/segment-anything) [@kirillov2023segany]. Specifically, I use a lighter version of SegmentAnything called [SlimSAM](https://github.com/czg1225/SlimSAM) [@chen20230] which uses a fraction of the parameters and achieves similar results as the original SAM. 
 
 ## Introduction
 
@@ -37,16 +37,16 @@ Pretrained models are machine learning models that have been trained on large da
 
 ### Color Extraction Process
 
-In addition to segmenting objects within an image, the SegColR package also provides tools for analyzing the colors present in the segmented regions. This color extraction process allows users to gain insights into the visual characteristics of the detected objects.
+In addition to segmenting objects within an image, the SegmentR package also provides tools for analyzing the colors present in the segmented regions. This color extraction process allows users to gain insights into the visual characteristics of the detected objects.
 
 ## Installation
 
 Installation
-Using the SegColR package requires both R and Python to be installed on your system, as well as the Conda package manager. This is because the package utilizes Python-based models and scripts for the image segmentation functionality.
+Using the SegmentR package requires both R and Python to be installed on your system, as well as the Conda package manager. This is because the package utilizes Python-based models and scripts for the image segmentation functionality.
 
 The first step is to ensure you have R and Python installed. If you don't have Python installed, you can download it from the official Python website (https://www.python.org/downloads/). Once Python is installed, you'll need to install the Conda package manager, which you can download from the Anaconda website (https://www.anaconda.com/download).
 
-After setting up the necessary dependencies, you can install the SegColR package itself. The package provides a function called setup_conda_environment() that will handle the setup of the required Python environment and dependencies.
+After setting up the necessary dependencies, you can install the SegmentR package itself. The package provides a function called setup_conda_environment() that will handle the setup of the required Python environment and dependencies.
 
 There are two options for setting up the Conda environment:
 
@@ -61,21 +61,21 @@ Specific Environment:
 
 Use the setup_conda_environment(`env_type = "specific"`) function.
 
-This will create a Conda environment with a specific set of package versions that are known to work with the SegColR package.
+This will create a Conda environment with a specific set of package versions that are known to work with the SegmentR package.
 
 This option is useful if you need to ensure the package works with a specific set of dependencies, but it may be more difficult to maintain over time as package versions are updated.
 
-Once you've run the setup_conda_environment() function, the SegColR package should be ready to use. You can then load the package in your R session and start exploring its functionality, as shown in the examples throughout the vignette.
+Once you've run the setup_conda_environment() function, the SegmentR package should be ready to use. You can then load the package in your R session and start exploring its functionality, as shown in the examples throughout the vignette.
 
 ## Loading Example Data
 
-The SegColR package comes with a dataset of 10 images from iNaturalist, 9 licensed under the CC0 (public domain) license and 1 licensed under the CC BY-NC. We can load this example data using the `load_segcolr_example_data()` function:
+The SegmentR package comes with a dataset of 10 images from iNaturalist, 9 licensed under the CC0 (public domain) license and 1 licensed under the CC BY-NC. We can load this example data using the `load_segmentr_example_data()` function:
 
 ```{r}
-library(SegColR)
+library(SegmentR)
 library(imager)
 library(RColorBrewer)
-example_data <- load_segcolr_example_data()
+example_data <- load_segmentr_example_data()
 ```
 ## Example 1 - Guided Segmentation and Color Analysis
 
@@ -87,17 +87,17 @@ img <- example_data$images[[2]]
 plot(img, axes = FALSE, main = "Andaman Hind")
 ```
 
-As you can see, this image depicts an Andaman Hind fish. However, performing color analysis on the entire image would be quite difficult, as the background would interfere with the color extraction process. To overcome this, we can use the SegColR package's image segmentation capabilities.
+As you can see, this image depicts an Andaman Hind fish. However, performing color analysis on the entire image would be quite difficult, as the background would interfere with the color extraction process. To overcome this, we can use the SegmentR package's image segmentation capabilities.
 
-The `grounded_segmentation_cli()` function in SegColR performs segmentation using pre-trained models, specifically the Grounding DINO and Segment Anything Model (SAM). This function takes the path to the input image, a vector of labels to detect, and several optional parameters to customize the segmentation process. For the sake of speed when installing the package and vignette, I will not run the the inference here. However, the code below shows how one would run a basic iteration. 
+The `grounded_segmentation_cli()` function in SegmentR performs segmentation using pre-trained models, specifically the Grounding DINO and Segment Anything Model (SAM). This function takes the path to the input image, a vector of labels to detect, and several optional parameters to customize the segmentation process. For the sake of speed when installing the package and vignette, I will not run the the inference here. However, the code below shows how one would run a basic iteration. 
 
 ```{r, eval=FALSE}
 # not run because it'll take too long for a vignette
 ground_results <- grounded_segmentation_cli(
   image_path = example_data$image_paths[2],
   labels = "a fish.",
-  output_json = "/home/jboyko/SegColR/extdata/json/",
-  output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  output_json = "/home/jboyko/SegmentR/extdata/json/",
+  output_plot = "/home/jboyko/SegmentR/extdata/plot/")
 ```
 
 
@@ -108,14 +108,14 @@ labels <- "a fish."
 file_name <- basename(img_path)
 file_name <- sub("\\.[^.]*$", "", file_name)
 directory <- dirname(img_path)
-json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+json_path <- paste0(gsub("images", "json/", directory), "segmentr_output_", file_name, ".json")
 
 if(!file.exists(json_path)){
   ground_results <- grounded_segmentation_cli(
     img_path,
     labels,
-    output_json = "/home/jboyko/SegColR/extdata/json/",
-    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+    output_json = "/home/jboyko/SegmentR/extdata/json/",
+    output_plot = "/home/jboyko/SegmentR/extdata/plot/")
   json_path = ground_results$json_path
 }
 ```
@@ -148,7 +148,7 @@ plot_seg_results(
 
 The resulting plot will show the original image with the segmented regions highlighted and the corresponding labels and scores displayed.
 
-With the image segmented, we can now focus on analyzing the colors present in the detected regions. The process_masks_and_extract_colors() function in SegColR allows us to do this:
+With the image segmented, we can now focus on analyzing the colors present in the detected regions. The process_masks_and_extract_colors() function in SegmentR allows us to do this:
 
 ```{r}
 color_results <- process_masks_and_extract_colors(
@@ -184,13 +184,13 @@ labels <- c("a flower.", "a bee.")
 file_name <- basename(img_path)
 file_name <- sub("\\.[^.]*$", "", file_name)
 directory <- dirname(img_path)
-json_path <- paste0(gsub("images", "json/", directory), "segcolr_output_", file_name, ".json")
+json_path <- paste0(gsub("images", "json/", directory), "segmentr_output_", file_name, ".json")
 
 if(!file.exists(json_path)){
   ground_results <- grounded_segmentation_cli(img_path,
     labels,
-    output_json = "/home/jboyko/SegColR/extdata/json/",
-    output_plot = "/home/jboyko/SegColR/extdata/plot/")
+    output_json = "/home/jboyko/SegmentR/extdata/json/",
+    output_plot = "/home/jboyko/SegmentR/extdata/plot/")
   json_path = ground_results$json_path
 }
 ```

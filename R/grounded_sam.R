@@ -9,6 +9,8 @@
 #' @param segmenter_id Character string. ID of the segmenter model.
 #' @param output_plot Character string. Path or directory to save the output plot.
 #' @param output_json Character string. Path or directory to save the output JSON.
+#' @param show_plot Boolean. Whether a plot should automatically be shown after a segmentation.
+#' @param create_dir Boolean. If the output directory doesn't exist, one will be created. 
 #' @param conda_env Character string. Name of the conda environment to use.
 #'
 #' @return A list containing the command output and paths to saved outputs.
@@ -20,59 +22,79 @@ grounded_segmentation_cli <- function(image_path,
   segmenter_id = "Zigeng/SlimSAM-uniform-77",
   output_plot = NULL,
   output_json = NULL,
-  conda_env = "segcolr-env") {
-
+  show_plot = FALSE,
+  create_dir = TRUE,
+  conda_env = "segmentr-env") {
+  
   # normalize to absolute paths
   image_path <- normalizePath(image_path)
   polygon_refinement = FALSE
-  script_path = system.file("python/main.py", package = "SegColR")
-
+  script_path = system.file("python/main.py", package = "SegmentR")
+  
   # Ensure the script path is correct
   if (!file.exists(script_path)) {
     stop("Python script not found at: ", script_path)
   }
-
-  # Ensure absolute paths
-  if(!is.null(output_plot)){
-    output_plot <- normalizePath(output_plot)
-  }
-  if(!is.null(output_json)){
-    output_json <- normalizePath(output_json)
-  }
-
+  
   # Generate default output paths if not provided
   file_name <- basename(image_path)
   file_name <- sub("\\.[^.]*$", "", file_name)
   directory <- dirname(image_path)
+  
+  # Set up plot directory and path
   if (is.null(output_plot)) {
-    output_plot <- file.path(directory,
-      paste0("segcolr_plot_", file_name, ".png"))
-  } else if (dir.exists(output_plot)) {
-    output_plot <- file.path(output_plot,
-      paste0("segcolr_plot_", file_name, ".png"))
+    plot_dir <- file.path(directory, "plots")
+    if (create_dir && !dir.exists(plot_dir)) {
+      dir.create(plot_dir, recursive = TRUE)
+    }
+    output_plot <- file.path(plot_dir, paste0("segmentr_plot_", file_name, ".png"))
+  } else {
+    if (create_dir && !dir.exists(output_plot)) {
+      dir.create(output_plot, recursive = TRUE)
+    }
+    output_plot <- file.path(output_plot, paste0("segmentr_plot_", file_name, ".png"))
   }
+  
+  # Set up json directory and path
   if (is.null(output_json)) {
-    output_json <- file.path(directory,
-      paste0("segcolr_output_", file_name, ".json"))
-  } else if (dir.exists(output_json)) {
-    output_json <- file.path(output_json,
-      paste0("segcolr_output_", file_name, ".json"))
+    json_dir <- file.path(directory, "json")
+    if (create_dir && !dir.exists(json_dir)) {
+      dir.create(json_dir, recursive = TRUE)
+    }
+    output_json <- file.path(json_dir, paste0("segmentr_output_", file_name, ".json"))
+  } else {
+    if (create_dir && !dir.exists(output_json)) {
+      dir.create(output_json, recursive = TRUE)
+    }
+    output_json <- file.path(output_json, paste0("segmentr_output_", file_name, ".json"))
   }
-
+  
+  # Ensure paths exist for directory creation
+  if (!dir.exists(dirname(output_plot)) && !create_dir) {
+    stop("Plot output directory does not exist: ", dirname(output_plot))
+  }
+  if (!dir.exists(dirname(output_json)) && !create_dir) {
+    stop("JSON output directory does not exist: ", dirname(output_json))
+  }
+  
+  # Normalize paths after directory creation
+  output_plot <- normalizePath(output_plot, mustWork = FALSE)
+  output_json <- normalizePath(output_json, mustWork = FALSE)
+  
   # Find conda path
   conda_path <- search_conda_locations()
   if (is.null(conda_path)) {
     stop("Conda executable not found. Please install Conda or provide the path manually.")
   }
+  
   # Check if the Conda environment exists
   cmd_check_env <- sprintf('%s env list | grep -q "%s"', conda_path, conda_env)
   env_exists <- system(cmd_check_env, ignore.stderr = TRUE)
-
   if (env_exists != 0) {
     stop("Specified conda environment '", conda_env, "' does not exist. ",
       "Please create it using setup_conda_environment() function.")
   }
-
+  
   # Construct the command to run the script in the Conda environment
   cmd <- sprintf("%s run -n %s python %s --image %s --labels '%s' --threshold %f --save_plot %s --save_json %s",
     conda_path,
@@ -83,14 +105,16 @@ grounded_segmentation_cli <- function(image_path,
     threshold,
     shQuote(output_plot),
     shQuote(output_json))
-
+  
   # Add optional arguments
   if (polygon_refinement) cmd <- paste(cmd, "--polygon_refinement")
   if (!is.null(detector_id)) cmd <- paste(cmd, sprintf("--detector_id %s", shQuote(detector_id)))
   if (!is.null(segmenter_id)) cmd <- paste(cmd, sprintf("--segmenter_id %s", shQuote(segmenter_id)))
-
+  if (show_plot) cmd <- paste(cmd, "--show_plot")
+  
   # Print the command (for debugging)
   cat("Executing command:", cmd, "\n")
+  
   # Run the command
   tryCatch({
     output <- system(cmd, intern = TRUE)
@@ -98,7 +122,7 @@ grounded_segmentation_cli <- function(image_path,
     stop("Error executing command: ", e$message,
       "\nCommand was: ", cmd)
   })
-
+  
   # Return the results
   list(
     activate_cmd = cmd,
@@ -108,7 +132,6 @@ grounded_segmentation_cli <- function(image_path,
     json_path = output_json
   )
 }
-
 #' Perform Custom Bounded Box Segmentation
 #'
 #' This function performs segmentation on an image using a custom bounding box.
@@ -128,10 +151,10 @@ custom_bbox_segmentation_cli <- function(image_path,
                                          bbox,
                                          polygon_refinement = FALSE,
                                          segmenter_id = "Zigeng/SlimSAM-uniform-77",
-                                         script_path = system.file("python/main.py", package = "SegColR"),
+                                         script_path = system.file("python/main.py", package = "SegmentR"),
                                          output_plot = NULL,
                                          output_json = NULL,
-                                         conda_env = "segcolr-env") {
+                                         conda_env = "segmentr-env") {
 
   # Ensure the script path is correct
   if (!file.exists(script_path)) {

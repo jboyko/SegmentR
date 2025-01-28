@@ -9,10 +9,10 @@ custom_bbox_segmentation_cli(
   bbox,
   polygon_refinement = FALSE,
   segmenter_id = "Zigeng/SlimSAM-uniform-77",
-  script_path = system.file("python/main.py", package = "SegColR"),
+  script_path = system.file("python/main.py", package = "SegmentR"),
   output_plot = NULL,
   output_json = NULL,
-  conda_env = "segcolr-env"
+  conda_env = "segmentr-env"
 )
 }
 \arguments{

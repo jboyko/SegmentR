@@ -33,11 +33,14 @@ def annotate(image: Union[Image.Image, np.ndarray], detection_results: List[Dete
 def plot_detections(
     image: Union[Image.Image, np.ndarray],
     detections: List[DetectionResult],
-    save_name: Optional[str] = None
+    save_name: Optional[str] = None,
+    show: bool = True
 ) -> None:
     annotated_image = annotate(image, detections)
     plt.imshow(annotated_image)
     plt.axis('off')
     if save_name:
         plt.savefig(save_name, bbox_inches='tight')
-    plt.show()
+    if show:
+        plt.show()
+    plt.close() 

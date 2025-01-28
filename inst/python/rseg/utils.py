@@ -34,6 +34,13 @@ class DetectionResult:
                                    xmax=detection_dict['box']['xmax'],
                                    ymax=detection_dict['box']['ymax']))
 
+def load_image(image_str: str) -> Image.Image:
+    if image_str.startswith("http"):
+        image = Image.open(requests.get(image_str, stream=True).raw).convert("RGB")
+    else:
+        image = Image.open(image_str).convert("RGB")
+    return image
+
 def mask_to_polygon(mask: np.ndarray) -> List[List[int]]:
     contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     largest_contour = max(contours, key=cv2.contourArea)
@@ -45,13 +52,6 @@ def polygon_to_mask(polygon: List[Tuple[int, int]], image_shape: Tuple[int, int]
     pts = np.array(polygon, dtype=np.int32)
     cv2.fillPoly(mask, [pts], color=(255,))
     return mask
-
-def load_image(image_str: str) -> Image.Image:
-    if image_str.startswith("http"):
-        image = Image.open(requests.get(image_str, stream=True).raw).convert("RGB")
-    else:
-        image = Image.open(image_str).convert("RGB")
-    return image
 
 def get_boxes(results: List[DetectionResult]) -> List[List[List[float]]]:
     boxes = []

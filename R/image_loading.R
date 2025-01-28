@@ -56,13 +56,13 @@ load_segmentation_results <- function(image_path, json_path) {
 }
 
 
-#' Load the SegColR example dataset
+#' Load the SegmentR example dataset
 #'
 #' @return A list containing the example images, their file paths, and photographer credits.
 #' @export
-load_segcolr_example_data <- function() {
+load_segmentr_example_data <- function() {
   image_paths <- list.files(
-    system.file("extdata", "images", package = "SegColR"),
+    system.file("extdata", "images", package = "SegmentR"),
     full.names = TRUE
   )
   image_list <- lapply(image_paths, imager::load.image)

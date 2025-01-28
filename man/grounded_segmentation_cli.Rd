@@ -12,7 +12,7 @@ grounded_segmentation_cli(
   segmenter_id = "Zigeng/SlimSAM-uniform-77",
   output_plot = NULL,
   output_json = NULL,
-  conda_env = "segcolr-env"
+  conda_env = "segmentr-env"
 )
 }
 \arguments{
