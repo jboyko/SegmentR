@@ -2,6 +2,10 @@
 
 export(combine_masks)
 export(exclude_masks)
+export(export_binary_masks)
+export(export_coco_json)
+export(export_imagej_roi)
+export(export_transparent_masks)
 export(extract_colors)
 export(get_segmentation_paths)
 export(grounded_segmentation_cli)

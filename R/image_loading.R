@@ -22,39 +22,111 @@ load_image <- function(image_path) {
 
 #' Load segmentation results
 #'
-#' This function loads the original image, JSON results, and corresponding masks
-#' from a previous segmentation operation.
+#' This function loads the original image(s), JSON results, and corresponding masks
+#' from previous segmentation operations. It can handle both single files and directories.
 #'
-#' @param image_path Character string. Path to the original image file.
-#' @param json_path Character string. Path to the JSON file containing segmentation results.
+#' @param path Character string. Path to original image file or directory containing images.
+#' @param json_path Character string. Optional path to JSON file or directory. If NULL,
+#'   will look in "json" subdirectory of image path.
+#' @param pattern Character string. File pattern to match when path is a directory (default: "\\.(jpg|jpeg|png)$").
+#' @param recursive Boolean. Whether to search for images recursively in subdirectories (default: FALSE).
 #'
-#' @return A list containing the original image, segmentation results, and masks.
+#' @return For single files: A list containing the original image, segmentation results, and masks.
+#'         For directories: A list of results for each image plus summary information.
 #' @export
 #'
 #' @examples
 #' \dontrun{
+#' # Load single image results
 #' results <- load_segmentation_results(
-#'   image_path = "path/to/image.jpg",
-#'   json_path = "path/to/results.json",
+#'   path = "path/to/image.jpg",
+#'   json_path = "path/to/results.json"
+#' )
+#'
+#' # Load all results from a directory
+#' results <- load_segmentation_results(
+#'   path = "path/to/image/directory",
+#'   recursive = TRUE
 #' )
 #' }
-load_segmentation_results <- function(image_path, json_path) {
-  # Load image
-  image <- load_image(image_path)
-
-  # Load JSON results
-  results <- jsonlite::fromJSON(json_path)
-
-  # Return a list with all components
-  list(
-    image = image,
-    label = results$label,
-    score = results$score,
-    box = results$box,
-    mask = results$mask
+load_segmentation_results <- function(path,
+  json_path = NULL,
+  pattern = "\\.(jpg|jpeg|png)$",
+  recursive = FALSE) {
+  
+  # Get expected paths
+  paths <- get_segmentation_paths(
+    path = path,
+    output_json = json_path,
+    pattern = pattern,
+    recursive = recursive
   )
+  
+  # Helper function to load a single result
+  load_single_result <- function(image_path, json_path) {
+    # Check if files exist
+    if (!file.exists(image_path)) {
+      warning("Image file not found: ", image_path)
+      return(NULL)
+    }
+    if (!file.exists(json_path)) {
+      warning("JSON file not found: ", json_path)
+      return(NULL)
+    }
+    
+    tryCatch({
+      # Load image
+      image <- load_image(image_path)
+      # Load JSON results
+      results <- jsonlite::fromJSON(json_path)
+      # Return combined results
+      list(
+        image = image,
+        label = results$label,
+        score = results$score,
+        box = results$box,
+        mask = results$mask,
+        paths = list(
+          image = image_path,
+          json = json_path
+        )
+      )
+    }, error = function(e) {
+      warning("Error loading results for ", image_path, ": ", e$message)
+      NULL
+    })
+  }
+  
+  # Handle directory case
+  if (is.list(paths) && !is.null(paths$summary)) {
+    # Initialize results list
+    results <- list()
+    
+    # Process each image
+    for (img_name in names(paths)) {
+      if (img_name != "summary") {
+        results[[img_name]] <- load_single_result(
+          paths[[img_name]]$image_path,
+          paths[[img_name]]$json_path
+        )
+      }
+    }
+    
+    # Add summary information
+    results$summary <- list(
+      total_images = paths$summary$total_images,
+      loaded_images = sum(!sapply(results[names(results) != "summary"], is.null)),
+      source_directory = paths$summary$source_directory,
+      failed_loads = names(which(sapply(results[names(results) != "summary"], is.null)))
+    )
+    
+    return(results)
+    
+  } else {
+    # Handle single image case
+    return(load_single_result(paths$image_path, paths$json_path))
+  }
 }
-
 
 #' Load the SegmentR example dataset
 #'

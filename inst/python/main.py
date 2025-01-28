@@ -2,6 +2,7 @@ import argparse
 import json
 import numpy as np
 from PIL import Image
+import cv2
 
 from rseg.detection import detect
 from rseg.segmentation import segment
@@ -11,6 +12,7 @@ from rseg.visualization import plot_detections
 def main(args):
     # Load image
     image = load_image(args.image)
+    img_height, img_width = image.size[1], image.size[0]
     
     # Convert labels string to list
     labels = json.loads(args.labels)
@@ -61,16 +63,16 @@ def main(args):
             show=args.show_plot
         )
 
-    
     # Always save json results
-    detections_dict = [
+        detections_dict = [
         {
             "label": d.label,
             "score": d.score,
             "box": d.box.__dict__,
-            "mask": d.mask.tolist() if d.mask is not None else None
+            "mask": d.mask[:img_height, :img_width].tolist() if d.mask is not None else None  # Crop to match both dimensions
         } for d in segmentation_results
     ]
+
     with open(args.save_json, 'w') as f:
         json.dump(detections_dict, f)
     

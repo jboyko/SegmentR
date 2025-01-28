@@ -4,25 +4,43 @@
 \alias{load_segmentation_results}
 \title{Load segmentation results}
 \usage{
-load_segmentation_results(image_path, json_path)
+load_segmentation_results(
+  path,
+  json_path = NULL,
+  pattern = "\\\\.(jpg|jpeg|png)$",
+  recursive = FALSE
+)
 }
 \arguments{
-\item{image_path}{Character string. Path to the original image file.}
+\item{path}{Character string. Path to original image file or directory containing images.}
 
-\item{json_path}{Character string. Path to the JSON file containing segmentation results.}
+\item{json_path}{Character string. Optional path to JSON file or directory. If NULL,
+will look in "json" subdirectory of image path.}
+
+\item{pattern}{Character string. File pattern to match when path is a directory (default: "\\.(jpg|jpeg|png)$").}
+
+\item{recursive}{Boolean. Whether to search for images recursively in subdirectories (default: FALSE).}
 }
 \value{
-A list containing the original image, segmentation results, and masks.
+For single files: A list containing the original image, segmentation results, and masks.
+For directories: A list of results for each image plus summary information.
 }
 \description{
-This function loads the original image, JSON results, and corresponding masks
-from a previous segmentation operation.
+This function loads the original image(s), JSON results, and corresponding masks
+from previous segmentation operations. It can handle both single files and directories.
 }
 \examples{
 \dontrun{
+# Load single image results
 results <- load_segmentation_results(
-  image_path = "path/to/image.jpg",
-  json_path = "path/to/results.json",
+  path = "path/to/image.jpg",
+  json_path = "path/to/results.json"
+)
+
+# Load all results from a directory
+results <- load_segmentation_results(
+  path = "path/to/image/directory",
+  recursive = TRUE
 )
 }
 }

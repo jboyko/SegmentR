@@ -17,7 +17,6 @@ def segment(
     processor = AutoProcessor.from_pretrained(segmenter_id)
 
     boxes = get_boxes(detection_results)
-    print(boxes)  # This shows [[132, 194, 789, 469]]
     
     # Process the image without resizing first to get original dimensions
     inputs = processor(images=image, input_boxes=boxes, return_tensors="pt", do_resize=False)
