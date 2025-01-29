@@ -3,14 +3,15 @@
 #' @param seg_results A list containing segmentation results (image, label, score, box, mask).
 #' @param mask_colors A named vector of colors for each label, or a color palette name from RColorBrewer.
 #' @param background One of "original", "grayscale", "transparent", or a specific color.
-#' @param show_label Logical. Whether to display labels.
-#' @param show_score Logical. Whether to display scores
-#' @param show_bbox Logical. Whether to display bounding boxes.
+#' @param show_label Boolean Whether to display labels.
+#' @param show_score Boolean Whether to display scores
+#' @param show_bbox Boolean Whether to display bounding boxes.
 #' @param score_threshold Numeric. Threshold for displaying results (0-1).
 #' @param exclude_boxes Numeric. Specifies which object detections should not be plotted.
 #' @param label_size Numeric. Size of label text.
 #' @param bbox_thickness Numeric. Thickness of bounding box lines.
 #' @param mask_alpha Numeric. Transparency of mask overlays (0-1).
+#' @param main Character. The title of the plot.
 #'
 #' @return Invisibly returns NULL, called for side effect of plotting.
 #' @importFrom graphics par rect text
@@ -25,7 +26,9 @@ plot_seg_results <- function(seg_results,
   exclude_boxes = NULL,
   label_size = 1,
   bbox_thickness = 2,
-  mask_alpha = 0.3) {
+  mask_alpha = 0.3,
+  main = "", 
+  ...) {
 
   default_par <- par(no.readonly = TRUE)
 
@@ -51,14 +54,14 @@ plot_seg_results <- function(seg_results,
   # Add the segmentation masks
   for (i in seq_along(seg_results$label)) {
     if (seg_results$score[i] >= score_threshold) {
-      mask <- imager::as.cimg(t(seg_results$mask[[i]])) > 0
+      mask <- imager::as.cimg(seg_results$mask[[i]]) > 0
       col <- mask_colors[seg_results$label[i]]
       bg <- imager::colorise(bg, mask, col, alpha = mask_alpha)
     }
   }
 
-  par(mar=c(.1,.1,.1,.1))
-  plot(bg, axes=FALSE)
+  # par(mar=c(.1,.1,.1,.1))
+  plot(bg, axes=FALSE, main = main, ...)
 
   for (i in seq_along(seg_results$label)) {
     if(!(i %in% exclude_boxes)){
@@ -95,7 +98,7 @@ plot_seg_results <- function(seg_results,
       col = "red", cex = label_size)
   }
 
-  par(default_par)
+  # par(default_par)
   invisible(NULL)
 }
 

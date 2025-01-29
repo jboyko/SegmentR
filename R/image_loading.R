@@ -85,7 +85,7 @@ load_segmentation_results <- function(path,
         label = results$label,
         score = results$score,
         box = results$box,
-        mask = results$mask,
+        mask = lapply(results$mask, t),
         paths = list(
           image = image_path,
           json = json_path
@@ -126,6 +126,93 @@ load_segmentation_results <- function(path,
     # Handle single image case
     return(load_single_result(paths$image_path, paths$json_path))
   }
+}
+
+#' Create summary table of segmentation results
+#'
+#' This function takes loaded segmentation results and creates a summary table
+#' showing key information about the masks, scores, and file locations.
+#'
+#' @param results List. Output from load_segmentation_results function.
+#' @param include_paths Logical. Whether to include full file paths in the table (default: TRUE).
+#'
+#' @return A data.frame containing the summary information.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' results <- load_segmentation_results("path/to/image.jpg")
+#' summary_table <- create_segmentation_table(results)
+#' }
+create_segmentation_table <- function(results, include_paths = TRUE) {
+  # Handle single result case
+  if (!is.null(results$paths)) {
+    results <- list(single_result = results)
+  }
+  
+  # Remove summary element if present
+  results <- results[names(results) != "summary"]
+  
+  # Initialize lists to store data
+  image_names <- character()
+  mask_ids <- integer()
+  labels <- character()
+  scores <- numeric()
+  box_coords <- character()
+  mask_dims <- character()
+  image_paths <- character()
+  json_paths <- character()
+  
+  # Process each result
+  for (img_name in names(results)) {
+    result <- results[[img_name]]
+    if (!is.null(result)) {
+      # Get number of masks for this image
+      n_masks <- length(result$mask)
+      
+      # Add data for each mask
+      for (i in seq_len(n_masks)) {
+        image_names <- c(image_names, img_name)
+        mask_ids <- c(mask_ids, i)
+        labels <- c(labels, result$label[i])
+        scores <- c(scores, result$score[i])
+        
+        # Format box coordinates
+        box <- unlist(result$box[i,])
+        box_coords <- c(box_coords, 
+          sprintf("xmin=%d, ymin=%d, xmax=%d, ymax=%d", 
+            box[1], box[2], box[3], box[4]))
+        
+        # Get mask dimensions
+        mask_dim <- dim(result$mask[[i]])
+        mask_dims <- c(mask_dims,
+          sprintf("%d x %d", mask_dim[1], mask_dim[2]))
+        
+        # Add file paths
+        image_paths <- c(image_paths, result$paths$image)
+        json_paths <- c(json_paths, result$paths$json)
+      }
+    }
+  }
+  
+  # Create data frame
+  df <- data.frame(
+    image_name = image_names,
+    mask_id = mask_ids,
+    label = labels,
+    score = round(scores, 3),
+    box_coordinates = box_coords,
+    mask_dimensions = mask_dims,
+    stringsAsFactors = FALSE
+  )
+  
+  # Add paths if requested
+  if (include_paths) {
+    df$image_path <- image_paths
+    df$json_path <- json_paths
+  }
+  
+  return(df)
 }
 
 #' Load the SegmentR example dataset

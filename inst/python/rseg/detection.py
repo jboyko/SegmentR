@@ -14,7 +14,7 @@ def detect(
     """
     Use Grounding DINO to detect a set of labels in an image in a zero-shot fashion.
     """
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     object_detector = pipeline(model=detector_id, task="zero-shot-object-detection", device=device)
 
     labels = [label if label.endswith(".") else label+"." for label in labels]

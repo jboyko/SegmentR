@@ -1,278 +1,215 @@
-#' #' Export Segmentation as Transparent PNG/TIFF
-#' #' 
-#' #' Exports segmentation results as an image file with specified regions made transparent
-#' #' @param seg_results A list containing segmentation results (image, label, score, box, mask)
-#' #' @param file_path Character. Path where the image should be saved
-#' #' @param format Character. Output format ("png" or "tiff")
-#' #' @param labels_to_keep Character vector. Labels of regions to keep (others made transparent)
-#' #' @param separate Logical. Whether to export each region as a separate file
-#' #' 
-#' #' @return Invisibly returns NULL
-#' #' @importFrom imager save.image as.cimg add.alpha
-#' #' @export
-#' export_transparent_image <- function(seg_results, 
-#'   file_path,
-#'   format = "png",
-#'   labels_to_keep = NULL,
-#'   separate = FALSE) {
-#'   # Validate format
-#'   format <- match.arg(format, c("png", "tiff"))
-#'   
-#'   # Convert original image to cimg
-#'   orig_img <- imager::as.cimg(seg_results$image)
-#'   
-#'   # If no labels specified, keep all
-#'   if (is.null(labels_to_keep)) {
-#'     labels_to_keep <- unique(seg_results$label)
-#'   }
-#'   
-#'   if (separate) {
-#'     # Export each region separately
-#'     for (label in labels_to_keep) {
-#'       # Find masks for this label
-#'       label_indices <- which(seg_results$label == label)
-#'       
-#'       # Combine all masks for this label using imager
-#'       combined_mask <- imager::as.cimg(array(0, dim = dim(t(seg_results$mask[[1]]))))
-#'       for (i in label_indices) {
-#'         combined_mask <- combined_mask | imager::as.cimg(t(seg_results$mask[[i]]))
-#'       }
-#'       
-#'       # Create masked image
-#'       masked_img <- orig_img * combined_mask
-#'       
-#'       # Add alpha channel
-#'       result_img <- imager::add.alpha(masked_img, alpha = combined_mask)
-#'       
-#'       # Generate output filename
-#'       out_path <- paste0(tools::file_path_sans_ext(file_path), 
-#'         "_", 
-#'         make.names(label), 
-#'         ".", 
-#'         format)
-#'       
-#'       # Save using imager
-#'       imager::save.image(result_img, out_path)
-#'     }
-#'   } else {
-#'     # Combine all specified labels into one mask
-#'     combined_mask <- imager::as.cimg(array(0, dim = dim(t(seg_results$mask[[1]]))))
-#'     for (label in labels_to_keep) {
-#'       label_indices <- which(seg_results$label == label)
-#'       for (i in label_indices) {
-#'         combined_mask <- combined_mask | imager::as.cimg(t(seg_results$mask[[i]]))
-#'       }
-#'     }
-#'     
-#'     # Create masked image
-#'     masked_img <- orig_img * combined_mask
-#'     
-#'     # Add alpha channel
-#'     result_img <- imager::add.alpha(masked_img, alpha = combined_mask)
-#'     
-#'     # Save using imager
-#'     imager::save.image(result_img, file_path)
-#'   }
-#'   
-#'   invisible(NULL)
+#' Export Segmentation as Transparent PNG
+#' @param input Either a seg_results list or image data (cimg object, array, or file path)
+#' @param masks Optional list of masks or single mask array (if not provided in seg_results)
+#' @param labels Optional vector of labels for each mask
+#' @param scores Optional vector of confidence scores
+#' @param output_path Character. Path where files should be saved.
+#' @param score_threshold Numeric. Threshold for including results (0-1)
+#' @param remove_overlap Boolean. Whether to remove any overlapping regions from masks with different labels.
+#' @param return_binary Boolean. Whether only a binary mask should be returned.
+#' @param crop Boolean. Whether to crop the image to the edges of the segment.
+#' @param prefix Character. Prefix for output filenames (default: NULL uses "segment")
+#' @param include_score Logical. Whether to include confidence score in filename (default: TRUE)
+#' @param id_padding Integer. Number of digits to pad mask IDs with (default: 3)
+#'
+#' @return Invisibly returns vector of saved file paths.
+export_transparent_png <- function(input,
+  masks = NULL,
+  labels = NULL,
+  scores = NULL,
+  output_path,
+  score_threshold = 0,
+  remove_overlap = TRUE,
+  return_binary = FALSE,
+  crop = FALSE,
+  prefix = NULL,
+  include_score = FALSE,
+  id_padding = 3) {
+  
+  # Parse input type and extract components
+  if (is.list(input) && all(c("image", "mask", "label", "score") %in% names(input))) {
+    # Input is seg_results format
+    image <- input$image
+    masks <- input$mask
+    labels <- input$label
+    scores <- input$score
+    if (is.null(prefix)) prefix <- sub("\\..*$", "",basename(input$paths$image))
+  } else {
+    # Input is direct image
+    image <- input
+    # Use provided masks, labels, scores or create defaults
+    if (is.null(masks)) stop("Masks must be provided when input is not seg_results")
+    if (!is.list(masks)) masks <- list(masks)
+    if (is.null(labels)) labels <- seq_along(masks)
+    if (is.null(scores)) scores <- rep(1, length(masks))
+    if (is.null(prefix)) prefix <- "segment"
+  }
+  
+  # Input validation and conversion for image
+  if (is.character(image) && file.exists(image)) {
+    image <- imager::load.image(image)
+  } else if (!inherits(image, "cimg")) {
+    image <- try(imager::as.cimg(image))
+    if (inherits(image, "try-error")) {
+      stop("Unable to convert input image to cimg format")
+    }
+  }
+  
+  # Create output directory if needed
+  dir.create(output_path, showWarnings = FALSE, recursive = TRUE)
+  labels <- as.factor(labels)
+  # Ensure image has alpha channel
+  if (dim(image)[4] == 3) {
+    # Create alpha channel
+    alpha_channel <- imager::imfill(dim = c(dim(image)[1:2], 1, 1), val = 1)
+    image <- imager::imappend(imager::imlist(image, alpha_channel), "c")
+  } else if (dim(image)[4] == 1) {
+    # For grayscale, convert to RGB + alpha
+    image_rgb <- imager::add.colour(image)  # Creates RGB
+    alpha_channel <- imager::imfill(dim = c(dim(image)[1:2], 1, 1), val = 1)
+    image <- imager::imappend(imager::imlist(image_rgb, alpha_channel), "c")
+  }
+  
+  output_files <- character()
+  if(remove_overlap){
+    all_masks <- list()
+    for(i in 1:length(levels(labels))){
+      all_masks[[i]] <- imager::imfill(dim = c(dim(image)[1:2], 1, 1), val = 0)
+    }
+    for (i in seq_along(masks)) {
+      if (scores[i] >= score_threshold) {
+        # Standardize mask format
+        mask <- try(imager::as.cimg(masks[[i]]))
+        if (inherits(mask, "try-error")) {
+          warning(sprintf("Skipping mask %d - invalid format", i))
+          next
+        }
+        # Ensure mask dimensions match
+        if (!all(dim(mask)[1:2] == dim(image)[1:2])) {
+          warning(sprintf("Skipping mask %d - dimension mismatch", i))
+          next
+        }
+        
+        # Make binary
+        mask <- (mask > 0)
+        label_idx <- which(labels[i] == levels(labels))
+        all_masks[[label_idx]] <- all_masks[[label_idx]] + mask
+      }
+    }
+  }
+  
+  for (i in seq_along(masks)) {
+    if (scores[i] >= score_threshold) {
+      # Standardize mask format
+      mask <- try(imager::as.cimg(masks[[i]]))
+      if (inherits(mask, "try-error")) {
+        warning(sprintf("Skipping mask %d - invalid format", i))
+        next
+      }
+      
+      # Ensure mask dimensions match
+      if (!all(dim(mask)[1:2] == dim(image)[1:2])) {
+        warning(sprintf("Skipping mask %d - dimension mismatch", i))
+        next
+      }
+      
+      # Make binary
+      mask <- (mask > 0)
+      if(remove_overlap){
+        label_idx <- which(labels[i] == levels(labels))
+        tmp_masks <- all_masks[-label_idx]
+        if(length(tmp_masks) > 0){
+          for(j in 1:length(tmp_masks)){
+            mask <- mask > 0 & tmp_masks[[j]] == 0
+          }
+        }
+      }
+      
+      # Convert to RGB
+      mask_rgb <- imager::add.colour(mask)
+      # Add alpha channel
+      mask_rgba <- imager::imappend(imager::imlist(mask_rgb, mask), "c")
+      
+      # Copy image data for masked region
+      result_img <- image * mask_rgba
+      
+      # Crop image
+      if (crop) {
+        # Create pixset from mask for bounding box calculation
+        mask_pixset <- as.pixset(mask)
+        
+        # Crop the result image using imager's crop.bbox
+        result_img <- imager::crop.bbox(result_img, mask_pixset)
+        
+        if (return_binary) {
+          mask_rgba <- imager::crop.bbox(mask_rgba, mask_pixset)
+        }
+      }
+      
+      # Generate filename components
+      mask_id <- sprintf(paste0("%0", id_padding, "d"), i)
+      label_part <- ifelse(!is.null(labels), paste0("_", labels[i]), "")
+      score_part <- ifelse(include_score, sprintf("_s%.2f", scores[i]), "")
+      binary_part <- ifelse(return_binary, "_binary", "")
+      
+      # Construct full filename
+      output_file <- file.path(
+        output_path, 
+        sprintf("%s_%s%s%s%s.png",
+          prefix,
+          mask_id,
+          label_part,
+          score_part,
+          binary_part)
+      )
+      
+      # Save the image
+      if(!return_binary) {
+        imager::save.image(result_img, output_file)
+      } else {
+        imager::save.image(as.cimg(mask_rgba), output_file)
+      }
+      
+      output_files <- c(output_files, output_file)
+    }
+  }
+  
+  return(invisible(output_files))
+}
+
+#' Remove mask from segmentation results
+#'
+#' This function removes a specified mask from segmentation results by its index.
+#'
+#' @param results List. The segmentation results containing image, labels, scores, boxes, masks, and paths.
+#' @param mask_index Integer. The index of the mask to remove.
+#'
+#' @return List with the same structure as the input, but with the specified mask removed.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' results <- load_segmentation_results("path/to/image.jpg")
+#' updated_results <- remove_mask(results, mask_index = 2)
 #' }
-#' 
-#' #' Export Binary Mask
-#' #' 
-#' #' Exports segmentation masks as binary images
-#' #' @param seg_results A list containing segmentation results
-#' #' @param file_path Character. Path where to save the mask
-#' #' @param labels_to_keep Character vector. Labels to include in mask
-#' #' @param separate Logical. Whether to export each label as separate mask
-#' #' 
-#' #' @return Invisibly returns NULL
-#' #' @importFrom imager save.image as.cimg
-#' #' @export
-#' export_binary_mask <- function(seg_results,
-#'   file_path,
-#'   labels_to_keep = NULL,
-#'   separate = FALSE) {
-#'   
-#'   # If no labels specified, keep all
-#'   if (is.null(labels_to_keep)) {
-#'     labels_to_keep <- unique(seg_results$label)
-#'   }
-#'   
-#'   if (separate) {
-#'     # Export each label as separate mask
-#'     for (label in labels_to_keep) {
-#'       # Find masks for this label
-#'       label_indices <- which(seg_results$label == label)
-#'       
-#'       # Combine all masks for this label using imager
-#'       combined_mask <- imager::as.cimg(array(0, dim = dim(t(seg_results$mask[[1]]))))
-#'       for (i in label_indices) {
-#'         combined_mask <- combined_mask | imager::as.cimg(t(seg_results$mask[[i]]))
-#'       }
-#'       
-#'       # Generate output filename
-#'       out_path <- paste0(tools::file_path_sans_ext(file_path),
-#'         "_",
-#'         make.names(label),
-#'         ".png")
-#'       
-#'       # Save using imager
-#'       imager::save.image(combined_mask, out_path)
-#'     }
-#'   } else {
-#'     # Combine all specified labels into one mask using imager
-#'     combined_mask <- imager::as.cimg(array(0, dim = dim(t(seg_results$mask[[1]]))))
-#'     for (label in labels_to_keep) {
-#'       label_indices <- which(seg_results$label == label)
-#'       for (i in label_indices) {
-#'         combined_mask <- combined_mask | imager::as.cimg(t(seg_results$mask[[i]]))
-#'       }
-#'     }
-#'     
-#'     # Save using imager
-#'     imager::save.image(combined_mask, file_path)
-#'   }
-#'   
-#'   invisible(NULL)
-#' }
-#' 
-#' #' Export ImageJ ROI Coordinates
-#' #' 
-#' #' Exports segmentation masks as ImageJ ROI coordinates
-#' #' @param seg_results A list containing segmentation results
-#' #' @param file_path Character. Path where to save the coordinates
-#' #' @param labels_to_keep Character vector. Labels to include
-#' #' @param format Character. Output format ("txt" or "zip")
-#' #' 
-#' #' @return Invisibly returns NULL
-#' #' @importFrom imager as.cimg boundary
-#' #' @importFrom utils write.table
-#' #' @export
-#' export_roi_coordinates <- function(seg_results,
-#'   file_path,
-#'   labels_to_keep = NULL,
-#'   format = "txt") {
-#'   
-#'   # Validate format
-#'   format <- match.arg(format, c("txt", "zip"))
-#'   
-#'   if (is.null(labels_to_keep)) {
-#'     labels_to_keep <- unique(seg_results$label)
-#'   }
-#'   
-#'   # Process each label
-#'   for (label in labels_to_keep) {
-#'     label_indices <- which(seg_results$label == label)
-#'     
-#'     # Process each instance of the label
-#'     for (i in label_indices) {
-#'       # Convert mask to cimg and get boundary
-#'       mask_img <- imager::as.cimg(t(seg_results$mask[[i]]))
-#'       boundary_pts <- imager::boundary(mask_img)
-#'       
-#'       # Extract x,y coordinates
-#'       coords <- cbind(boundary_pts$x, boundary_pts$y)
-#'       
-#'       if (format == "txt") {
-#'         # Save as text file with x,y coordinates
-#'         out_path <- paste0(tools::file_path_sans_ext(file_path),
-#'           "_",
-#'           make.names(label),
-#'           "_",
-#'           i,
-#'           ".txt")
-#'         
-#'         write.table(coords, 
-#'           out_path,
-#'           row.names = FALSE,
-#'           col.names = c("X", "Y"),
-#'           sep = "\t")
-#'       } else {
-#'         # Save as ImageJ ROI ZIP file
-#'         # Note: This requires the ijroi package or similar
-#'         # Implementation depends on specific requirements
-#'         warning("ZIP format not yet implemented")
-#'       }
-#'     }
-#'   }
-#'   
-#'   invisible(NULL)
-#' }
-#' 
-#' #' Export COCO JSON Format
-#' #' 
-#' #' Exports segmentation results in COCO JSON format
-#' #' @param seg_results A list containing segmentation results
-#' #' @param file_path Character. Path where to save the JSON file
-#' #' @param image_id Character/Numeric. ID for the image in COCO format
-#' #' @param category_ids Named numeric vector. Mapping of labels to category IDs
-#' #' 
-#' #' @return Invisibly returns NULL
-#' #' @importFrom jsonlite write_json
-#' #' @importFrom imager as.cimg boundary
-#' #' @export
-#' export_coco_json <- function(seg_results,
-#'   file_path,
-#'   image_id = 1,
-#'   category_ids = NULL) {
-#'   
-#'   # Create default category IDs if not provided
-#'   if (is.null(category_ids)) {
-#'     unique_labels <- unique(seg_results$label)
-#'     category_ids <- setNames(seq_along(unique_labels), unique_labels)
-#'   }
-#'   
-#'   # Initialize COCO format
-#'   coco_data <- list(
-#'     images = list(
-#'       list(
-#'         id = image_id,
-#'         width = dim(seg_results$image)[2],
-#'         height = dim(seg_results$image)[1]
-#'       )
-#'     ),
-#'     annotations = list(),
-#'     categories = lapply(seq_along(category_ids), function(i) {
-#'       list(
-#'         id = category_ids[i],
-#'         name = names(category_ids)[i]
-#'       )
-#'     })
-#'   )
-#'   
-#'   # Process each segmentation
-#'   for (i in seq_along(seg_results$label)) {
-#'     # Convert mask to cimg and get boundary
-#'     mask_img <- imager::as.cimg(t(seg_results$mask[[i]]))
-#'     boundary_pts <- imager::boundary(mask_img)
-#'     
-#'     # Format coordinates for COCO (flatten x,y coordinates)
-#'     segmentation <- as.numeric(rbind(boundary_pts$x, boundary_pts$y))
-#'     
-#'     # Create annotation entry
-#'     annotation <- list(
-#'       id = i,
-#'       image_id = image_id,
-#'       category_id = category_ids[seg_results$label[i]],
-#'       segmentation = list(segmentation),
-#'       area = sum(t(seg_results$mask[[i]])),
-#'       bbox = as.numeric(c(
-#'         seg_results$box$xmin[i],
-#'         seg_results$box$ymin[i],
-#'         seg_results$box$xmax[i] - seg_results$box$xmin[i],
-#'         seg_results$box$ymax[i] - seg_results$box$ymin[i]
-#'       )),
-#'       iscrowd = 0
-#'     )
-#'     
-#'     coco_data$annotations[[i]] <- annotation
-#'   }
-#'   
-#'   # Write to JSON file
-#'   jsonlite::write_json(coco_data, 
-#'     file_path, 
-#'     auto_unbox = TRUE, 
-#'     pretty = TRUE)
-#'   
-#'   invisible(NULL)
-#' }
+remove_mask <- function(results, mask_index) {
+  # Validate inputs
+  if (!is.list(results) || length(results) != 6) {
+    stop("Results must be a list with 6 elements (image, label, score, box, mask, paths)")
+  }
+  if (!is.numeric(mask_index) || mask_index < 1 || mask_index > length(results$mask)) {
+    stop("Invalid mask_index. Must be between 1 and ", length(results$mask))
+  }
+  
+  # Create new results list with mask removed
+  new_results <- list(
+    image = results$image,
+    label = results$label[-mask_index],
+    score = results$score[-mask_index],
+    box = results$box[-mask_index, , drop = FALSE],
+    mask = results$mask[-mask_index],
+    paths = results$paths
+  )
+  
+  return(new_results)
+}
