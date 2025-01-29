@@ -15,7 +15,6 @@
 #' @return Invisibly returns NULL, called for side effect of plotting.
 #' @importFrom graphics par rect text
 #' @importFrom grDevices col2rgb
-#' @export
 plot_seg_results <- function(seg_results,
   mask_colors = "Set1",
   background = "original",
@@ -112,7 +111,6 @@ plot_seg_results <- function(seg_results,
 #' @return Invisibly returns NULL, called for side effect of plotting.
 #' @importFrom graphics axis box hist layout par rect text
 #' @importFrom imager as.cimg
-#' @export
 plot_color_info <- function(color_results, horiz=TRUE, repainted=TRUE) {
   default_par <- par(no.readonly = TRUE)
   # Extract relevant information from the color_info list
@@ -214,7 +212,6 @@ plot_color_info <- function(color_results, horiz=TRUE, repainted=TRUE) {
 #' @return Array. The repainted image (height x width x channels).
 #' @importFrom imager as.cimg
 #' @importFrom grDevices col2rgb
-#' @export
 plot_repainted_mask <- function(image, final_mask, color_info, verbose=FALSE) {
   # Create a new image the same size as the original
   repainted_image <- as.cimg(array(1, dim = c(nrow(image), ncol(image), 1, 3)))

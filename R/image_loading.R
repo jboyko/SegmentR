@@ -16,7 +16,7 @@ load_image <- function(image_path) {
     img <- imager::load.image(image_path)
     return(as.array(img))
   } else {
-    stop("imager package not available. Please install it or provide an alternative method.")
+    stop("imager package not available. Please install it.")
   }
 }
 

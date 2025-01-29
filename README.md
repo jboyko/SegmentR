@@ -1,27 +1,27 @@
 ------------------------------------------------------------------------
 
-# SegColR: A Package for Image Segmentation
+# SegmentR: A Package for Image Segmentation
 
-The **SegColR** package is a tool for image segmentation and color extraction. SegColR is built on two pretrained models: [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) and [Segment Anything Model (SAM)](https://github.com/facebookresearch/segment-anything). Specifically, we use a lighter version of SAM called [SlimSAM](https://github.com/czg1225/SlimSAM), which uses fewer parameters but achieves similar results.
+The **SegmentR** package is a tool for image segmentation and color extraction. SegmentR is built on two pretrained models: [GroundingDINO](https://github.com/IDEA-Research/GroundingDINO) and [Segment Anything Model (SAM)](https://github.com/facebookresearch/segment-anything). Specifically, we use a lighter version of SAM called [SlimSAM](https://github.com/czg1225/SlimSAM), which uses fewer parameters but achieves similar results.
 
-More details on SegColR can be found here: https://www.biorxiv.org/content/10.1101/2024.07.28.605475v1
+More details on SegmentR can be found here: https://www.biorxiv.org/content/10.1101/2024.07.28.605475v1
 
 ## Installing the Package
 
-To install the SegColR package from GitHub, use the following command in R:
+To install the SegmentR package from GitHub, use the following command in R:
 
 ``` r
-devtools::install_github("jboyko/SegColR")
+devtools::install_github("jboyko/SegmentR")
 ```
 
 ## Setting up the Python Environment Within R
 
-SegColR requires a specific Python environment.
+SegmentR requires a specific Python environment.
 To set it up from within R, follow these steps:
 
 1.  **Install Anaconda or Miniconda**: If you don't have Anaconda or Miniconda installed, download and install it from their [official website](https://docs.conda.io/en/latest/miniconda.html).
 
-2.  **Install the SegColR R Package**: Install the package using the command provided above.
+2.  **Install the SegmentR R Package**: Install the package using the command provided above.
 
 3.  **Setup the Conda Environment**: Run the following R function to set up the required Python environment:
 
@@ -39,7 +39,7 @@ If you prefer to set up the Python environment outside of R, follow these steps:
 
 2.  **Open a Terminal or Command Prompt**: Access your command-line interface.
 
-3.  **Navigate to the Package Directory**: Go to the directory containing the SegColR package.
+3.  **Navigate to the Package Directory**: Go to the directory containing the SegmentR package.
 
 4.  **Create the Conda Environment**: Execute the following command to create the required environment:
 
@@ -50,17 +50,17 @@ If you prefer to set up the Python environment outside of R, follow these steps:
 5.  **(Optional) Activate the Environment**: To activate the environment, use:
 
     ``` bash
-    conda activate segcolr-env
+    conda activate segmentr-env
     ```
 
 ## Usage
 
 ```
-library(SegColR)
+library(SegmentR)
 library(imager)
 library(RColorBrewer)
 
-example_data <- load_segcolr_example_data()
+example_data <- load_segmentr_example_data()
 ```
 
 ## Guided Segmentation and Color Analysis
@@ -79,8 +79,8 @@ To segment the image and analyze colors, use the `grounded_segmentation_cli()` f
 ground_results <- grounded_segmentation_cli(
   image_path = example_data$image_paths[2],
   labels = "a fish.",
-  output_json = "/home/jboyko/SegColR/extdata/json/",
-  output_plot = "/home/jboyko/SegColR/extdata/plot/")
+  output_json = "/home/jboyko/SegmentR/extdata/json/",
+  output_plot = "/home/jboyko/SegmentR/extdata/plot/")
 ```
 ![As part of the output an image is generated from Python and saved in the output_plot directory.](https://i.imgur.com/G1S5Vqz.png)
 
