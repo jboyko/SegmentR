@@ -77,194 +77,39 @@ library(imager)
 library(RColorBrewer)
 example_data <- load_segmentr_example_data()
 ```
-## Example 1 - Guided Segmentation and Color Analysis
 
-The example data contains several images, each stored as an imager::Image object. For this demonstration, we'll use the second image in the dataset:
+## Example 1
 
-```{r}
-img <- example_data$images[[2]]
-# View the image
-plot(img, axes = FALSE, main = "Andaman Hind")
-```
-
-As you can see, this image depicts an Andaman Hind fish. However, performing color analysis on the entire image would be quite difficult, as the background would interfere with the color extraction process. To overcome this, we can use the SegmentR package's image segmentation capabilities.
-
-The `grounded_segmentation_cli()` function in SegmentR performs segmentation using pre-trained models, specifically the Grounding DINO and Segment Anything Model (SAM). This function takes the path to the input image, a vector of labels to detect, and several optional parameters to customize the segmentation process. For the sake of speed when installing the package and vignette, I will not run the the inference here. However, the code below shows how one would run a basic iteration. 
+The first example will remove the fins of a fish from the whole fish. You begin by specifying the path to the image and the text prompts. Since I want to remove fins, I specify to look for fins in the image. I also want the whole fish, so I specify fish. 
 
 ```{r, eval=FALSE}
-# not run because it'll take too long for a vignette
-ground_results <- grounded_segmentation_cli(
-  image_path = example_data$image_paths[2],
-  labels = "a fish.",
-  output_json = "/home/jboyko/SegmentR/extdata/json/",
-  output_plot = "/home/jboyko/SegmentR/extdata/plot/")
+# not run in vignette building
+results <- run_grounded_segmentation(example_data$image_paths_1, labels = c("a fish.", "a fin."))
 ```
 
+The results object will contain the necessary meta data for downstream analysis. This includes paths to the json, image, etc. However, so that you don't have to run it every time to get those file paths, you can just specify the image location and generate the default path setup using get_segmentaiton_paths. This will return the same output as run_grounded_segmentation but without conducting any computationally demanding segmentations. We can then load the results.
+
+```{r, eval=TRUE}
+results <- get_segmentation_paths(example_data$image_paths_1)
+seg_res <- load_segmentation_results(results$image_path)
+```
+
+We can plot our detections using plot_seg_results()
+
+```{r, eval=TRUE}
+plot_seg_results(seg_res, main = "")
+```
+
+So things look okay. We detected some fins, the whole body of the fish (hard to see because of overlap), but fins were detected as the entire fish. Clearly this is wrong and if we removed overlap based on this, the entire fish would be removed! So let's remove one of the masks and see if we can't improve the quality. 
 
 ```{r}
-# previous results have been saved
-img_path <- example_data$image_paths[2]
-labels <- "a fish."
-file_name <- basename(img_path)
-file_name <- sub("\\.[^.]*$", "", file_name)
-directory <- dirname(img_path)
-json_path <- paste0(gsub("images", "json/", directory), "segmentr_output_", file_name, ".json")
-
-if(!file.exists(json_path)){
-  ground_results <- grounded_segmentation_cli(
-    img_path,
-    labels,
-    output_json = "/home/jboyko/SegmentR/extdata/json/",
-    output_plot = "/home/jboyko/SegmentR/extdata/plot/")
-  json_path = ground_results$json_path
-}
+plot_seg_results(remove_mask(seg_res, 2), main = "")
 ```
 
-The segmentation process generates a JSON file containing information about the detected objects, including their masks, labels, and scores. We can then load these segmentation results using the load_segmentation_results() function:
+Much better, from here we can reasign this variable and we export the results. 
 
 ```{r}
-seg_results <- load_segmentation_results(
-  image_path = img_path,
-  json_path = json_path)
+seg_res <- remove_mask(seg_res, 2)
+# export_transparent_png(input = seg_res, output_path = "your_path_here", remove_overlap = TRUE, crop = TRUE)
+# export_transparent_png(input = seg_res, prefix = "full_bream", output_path = "your_path_here", remove_overlap = FALSE, crop = TRUE)
 ```
-
-
-Now that we have the segmentation results, we can visualize them using the plot_seg_results() function. This function allows you to customize the appearance of the plot, such as the mask colors, background, and the display of labels, scores, and bounding boxes:
-
-```{r}
-plot_seg_results(
-  seg_results = seg_results,
-  mask_colors = "Set1",
-  background = "grayscale",
-  show_label = TRUE,
-  show_score = TRUE,
-  show_bbox = TRUE,
-  score_threshold = 0.5,
-  label_size = 1.2,
-  bbox_thickness = 2,
-  mask_alpha = 0.3
-)
-```
-
-The resulting plot will show the original image with the segmented regions highlighted and the corresponding labels and scores displayed.
-
-With the image segmented, we can now focus on analyzing the colors present in the detected regions. The process_masks_and_extract_colors() function in SegmentR allows us to do this:
-
-```{r}
-color_results <- process_masks_and_extract_colors(
-  image = seg_results$image,
-  masks = seg_results$mask,
-  scores = seg_results$score,
-  labels = seg_results$label,
-  include_labels = labels,
-  exclude_labels = NULL,
-  score_threshold = 0.5,
-  n_colors = 5
-)
-```
-
-
-This function processes the segmentation masks, extracts the dominant colors in the detected regions, and returns a list containing the original image, the final mask, and the color information.
-
-Finally, you can visualize the extracted color information using the plot_color_info() function:
-
-```{r, fig.width=8, fig.height=5}
-plot_color_info(color_results)
-```
-
-This will create a plot showing the colors present in the segmented regions, along with their relative proportions and RGB values.
-
-## Example 2 - Excluding Objects
-
-It may sometimes be necessary to mask multiple objects and exclude certain types. In this example we want to extract color flower, but there is a bee visiting the flower. If we were to segment only flower, we would likely include the bee as well since the bounding box does not discriminate. However, if we say we want the bee and the flower, then we can get the flower mask and subtract the bee mask from it and get a cleaner color quantification. 
-
-```{r}
-img_path <- example_data$image_paths[1]
-labels <- c("a flower.", "a bee.")
-file_name <- basename(img_path)
-file_name <- sub("\\.[^.]*$", "", file_name)
-directory <- dirname(img_path)
-json_path <- paste0(gsub("images", "json/", directory), "segmentr_output_", file_name, ".json")
-
-if(!file.exists(json_path)){
-  ground_results <- grounded_segmentation_cli(img_path,
-    labels,
-    output_json = "/home/jboyko/SegmentR/extdata/json/",
-    output_plot = "/home/jboyko/SegmentR/extdata/plot/")
-  json_path = ground_results$json_path
-}
-```
-
-Again load and plot the segmentation results.
-
-```{r}
-seg_results <- load_segmentation_results(
-  image_path = img_path,
-  json_path = json_path)
-
-plot_seg_results(
-  seg_results = seg_results,
-  mask_colors = "Set1",
-  background = "grayscale",
-  show_label = TRUE,
-  show_score = TRUE,
-  show_bbox = TRUE,
-  score_threshold = 0.5,
-  label_size = 1.2,
-  bbox_thickness = 2,
-  mask_alpha = 0.3
-)
-```
-
-Great we have a bee mask and flower mask. One interesting thing for this image is that it detects far more than what is shown in the above figure. We can see that if we lower the score_threshold:
-
-```{r}
-plot_seg_results(
-  seg_results = seg_results,
-  mask_colors = "Set1",
-  background = "grayscale",
-  show_label = TRUE,
-  show_score = TRUE,
-  show_bbox = TRUE,
-  score_threshold = 0,
-  label_size = 1.2,
-  bbox_thickness = 2,
-  mask_alpha = 0.3
-)
-```
-
-For our analysis we'll stick with the 0.5 threshold. If we chose not to exlude the bee and only include the flower masks we would get something like this:
-
-```{r, fig.width=8, fig.height=5}
-color_results <- process_masks_and_extract_colors(
-  image = seg_results$image,
-  masks = seg_results$mask,
-  scores = seg_results$score,
-  labels = seg_results$label,
-  include_labels = labels[1],
-  exclude_labels = NULL,
-  score_threshold = 0.5,
-  n_colors = 5
-)
-
-plot_color_info(color_results)
-```
-
-Clearly we're also picking up on the bee colors. To correct this specify which labels to exclude:
-
-```{r, fig.width=8, fig.height=5}
-color_results <- process_masks_and_extract_colors(
-  image = seg_results$image,
-  masks = seg_results$mask,
-  scores = seg_results$score,
-  labels = seg_results$label,
-  include_labels = labels[1],
-  exclude_labels = labels[2],
-  score_threshold = 0.5,
-  n_colors = 5
-)
-
-plot_color_info(color_results)
-```
-
-Much better. The bee has been removed from the mask. Note that we have no way to quantify the color underneath the bee, that information is just lost. 

@@ -220,20 +220,30 @@ create_segmentation_table <- function(results, include_paths = TRUE) {
 #' @return A list containing the example images, their file paths, and photographer credits.
 #' @export
 load_segmentr_example_data <- function() {
-  image_paths <- list.files(
-    system.file("extdata", "images", package = "SegmentR"),
+  
+  image_paths_1 <- list.files(
+    system.file("extdata", "images", "other_images", package = "SegmentR"),
     full.names = TRUE
   )
-  image_list <- lapply(image_paths, imager::load.image)
+  image_paths_1 <- image_paths_1[grep("Bream", image_paths_1)]
+  
+  image_paths_2 <- list.files(
+    system.file("extdata", package = "SegmentR"),
+    full.names = TRUE
+  )
+  image_paths_2 <- image_paths_2[grep("images", image_paths_2)]
+  
   photographer_credits <- c(
-    "Andaman Hind" = "Observation by fishhead (CC0) - https://www.inaturalist.org/observations/226199473",
-    "American Bumble Bee" = "Observation by Mary Spolyar (CC BY-NC) - https://www.inaturalist.org/observations/100024260",
-    "Horned Bream" = "Observation by Michael Bommerer (CC BY) - https://www.inaturalist.org/observations/227272077"
+    "Horned Bream" = "https://www.inaturalist.org/observations/227272077",
+    "Lesser Fringed Gentian" = "https://www.inaturalist.org/observations/249435672",
+    "Flat-topped Goldenrod" = "https://www.inaturalist.org/observations/243695619",
+    "Calico Aster" = "https://www.inaturalist.org/observations/242477360",
+    "Black-eyed Susan" = "https://www.inaturalist.org/observations/243146103"
     # Add more credits here
   )
   return(list(
-    images = image_list,
-    image_paths = image_paths,
+    image_paths_1 = image_paths_1,
+    image_paths_2 = image_paths_2,
     photographer_credits = photographer_credits
   ))
 }

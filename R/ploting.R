@@ -16,6 +16,7 @@
 #' @return Invisibly returns NULL, called for side effect of plotting.
 #' @importFrom graphics par rect text
 #' @importFrom grDevices col2rgb
+#' @export
 plot_seg_results <- function(seg_results,
   mask_colors = "Set1",
   background = "original",
@@ -43,8 +44,8 @@ plot_seg_results <- function(seg_results,
 
   # Prepare color palette
   if (length(mask_colors) == 1 && mask_colors %in% rownames(RColorBrewer::brewer.pal.info)) {
-    n_colors <- length(unique(seg_results$label))
-    mask_colors <- RColorBrewer::brewer.pal(n_colors, mask_colors)
+    n_colors <- max(3, length(unique(seg_results$label)))
+    mask_colors <- RColorBrewer::brewer.pal(n_colors, mask_colors)[1:length(unique(seg_results$label))]
     names(mask_colors) <- unique(seg_results$label)
   }
 

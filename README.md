@@ -65,74 +65,64 @@ example_data <- load_segmentr_example_data()
 
 ## Guided Segmentation and Color Analysis
 
-We'll use the second image from the example data to demonstrate the segmentation and color analysis.
+We'll use the batch example to demonstrate the segmentation. A single image example can be found in the vignette.
 
 ```
-img <- example_data$images[[2]]
-plot(img, axes = FALSE, main = "Andaman Hind")
-```
-![Andaman Hind](https://i.imgur.com/MzAmPR2.jpeg)
-
-To segment the image and analyze colors, use the `grounded_segmentation_cli()` function:
+img_folder <- load_segmentr_example_data()[[2]]
+image_paths <- dir(img_folder, full.names = TRUE)[grep("jpeg", dir(img_folder))]
 
 ```
-ground_results <- grounded_segmentation_cli(
-  image_path = example_data$image_paths[2],
-  labels = "a fish.",
-  output_json = "/home/jboyko/SegmentR/extdata/json/",
-  output_plot = "/home/jboyko/SegmentR/extdata/plot/")
-```
-![As part of the output an image is generated from Python and saved in the output_plot directory.](https://i.imgur.com/G1S5Vqz.png)
+![Flower images](https://i.imgur.com/SQTJkjL.png)
 
-
-All of the necessary paths are saved as part of the ground_results. Load the segmentation results:
+To segment the image and analyze colors, use the `run_grounded_segmentation` function:
 
 ```
-seg_results <- load_segmentation_results(
-  image_path = ground_results$image_path,
-  json_path = ground_results$json_path
-)
+run_grounded_segmentation(img_folder, labels = c("an individual flower"))
 ```
 
-Visualize the results with:
+It will output plots and jsons. It will also print out to console the command it's running in python. 
 
 ```
-plot_seg_results(
-  seg_results = seg_results,
-  mask_colors = "Set1",
-  background = "grayscale",
-  show_label = TRUE,
-  show_score = TRUE,
-  show_bbox = TRUE,
-  score_threshold = 0.5,
-  label_size = 1.2,
-  bbox_thickness = 2,
-  mask_alpha = 0.3)
-```
-![Segmentaiton results produced in R.](https://i.imgur.com/8e2BWbg.png)
+Processing image 1 of 4: 242477360.jpeg
+Executing command: /opt/miniconda3/bin/conda run -n segmentr-env python '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/python/main.py' --image '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/242477360.jpeg' --labels '["an individual flower"]' --threshold 0.300000 --save_plot '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/plots/segmentr_plot_242477360.png' --save_json '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/json/segmentr_output_242477360.json' --detector_id 'IDEA-Research/grounding-dino-tiny' --segmenter_id 'Zigeng/SlimSAM-uniform-77' 
 
-Analyze colors in the segmented regions:
+Processing image 2 of 4: 243146103.jpeg
+Executing command: /opt/miniconda3/bin/conda run -n segmentr-env python '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/python/main.py' --image '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/243146103.jpeg' --labels '["an individual flower"]' --threshold 0.300000 --save_plot '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/plots/segmentr_plot_243146103.png' --save_json '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/json/segmentr_output_243146103.json' --detector_id 'IDEA-Research/grounding-dino-tiny' --segmenter_id 'Zigeng/SlimSAM-uniform-77' 
 
-```
-color_results <- process_masks_and_extract_colors(
-  image = seg_results$image,
-  masks = seg_results$mask,
-  scores = seg_results$score,
-  labels = seg_results$label,
-  include_labels = labels,
-  exclude_labels = NULL,
-  score_threshold = 0.5,
-  n_colors = 5)
+Processing image 3 of 4: 243695619.jpeg
+Executing command: /opt/miniconda3/bin/conda run -n segmentr-env python '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/python/main.py' --image '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/243695619.jpeg' --labels '["an individual flower"]' --threshold 0.300000 --save_plot '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/plots/segmentr_plot_243695619.png' --save_json '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/json/segmentr_output_243695619.json' --detector_id 'IDEA-Research/grounding-dino-tiny' --segmenter_id 'Zigeng/SlimSAM-uniform-77' 
+
+Processing image 4 of 4: 249435672.jpeg
+Executing command: /opt/miniconda3/bin/conda run -n segmentr-env python '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/python/main.py' --image '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/249435672.jpeg' --labels '["an individual flower"]' --threshold 0.300000 --save_plot '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/plots/segmentr_plot_249435672.png' --save_json '/Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/library/SegmentR/extdata/images/json/segmentr_output_249435672.json' --detector_id 'IDEA-Research/grounding-dino-tiny' --segmenter_id 'Zigeng/SlimSAM-uniform-77' 
 ```
 
-Finally, visualize the extracted colors:
+
+All of the necessary paths are saved as part of the results, but they can also be recreated (without doing the segmentaiton again) using `get_segmentation_paths`. Load the segmentation results:
 
 ```
-plot_color_info(color_results)
+results <- get_segmentation_paths(img_folder)
+seg_res <- load_segmentation_results(results$summary$source_directory)
 ```
 
-![This plot displays the colors in the segmented regions, showing their proportions and RGB values.](https://i.imgur.com/mxe4DNO.png)
+Visualize the results with (annoyingly these results were even better than the ones I shared in the manuscript):
 
-This is only a very basic color analysis and other R packages such as `recolorize` may be better suited for downstream analyses. 
+```
+layout(matrix(1:4, nrow = 2))
+par(mar = c(1, 0, 1, 0))
+for(i in 4:1){
+  plot_seg_results(seg_res[[i]])
+}
+```
 
+![Segmentaiton results produced in R.](https://i.imgur.com/VcowwaZ.png)
+
+Finally, we can export the masks.
+
+```
+for(i in 1:(length(seg_res)-1)){
+  focal <- seg_res[[i]]
+  export_transparent_png(input = focal, 
+    output_path = "~/exported_segments/", remove_overlap = TRUE, crop = TRUE)
+}
+```
 ---

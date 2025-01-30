@@ -16,7 +16,9 @@ plot_seg_results(
   exclude_boxes = NULL,
   label_size = 1,
   bbox_thickness = 2,
-  mask_alpha = 0.3
+  mask_alpha = 0.3,
+  main = "",
+  ...
 )
 }
 \arguments{
@@ -26,11 +28,11 @@ plot_seg_results(
 
 \item{background}{One of "original", "grayscale", "transparent", or a specific color.}
 
-\item{show_label}{Logical. Whether to display labels.}
+\item{show_label}{Boolean Whether to display labels.}
 
-\item{show_score}{Logical. Whether to display scores}
+\item{show_score}{Boolean Whether to display scores}
 
-\item{show_bbox}{Logical. Whether to display bounding boxes.}
+\item{show_bbox}{Boolean Whether to display bounding boxes.}
 
 \item{score_threshold}{Numeric. Threshold for displaying results (0-1).}
 
@@ -41,6 +43,8 @@ plot_seg_results(
 \item{bbox_thickness}{Numeric. Thickness of bounding box lines.}
 
 \item{mask_alpha}{Numeric. Transparency of mask overlays (0-1).}
+
+\item{main}{Character. The title of the plot.}
 }
 \value{
 Invisibly returns NULL, called for side effect of plotting.
