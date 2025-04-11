@@ -11,7 +11,8 @@
 #' @param prefix Character. Prefix for output filenames (default: NULL uses "segment")
 #' @param include_score Logical. Whether to include confidence score in filename (default: TRUE)
 #' @param id_padding Integer. Number of digits to pad mask IDs with (default: 3)
-#'
+#' 
+#' @export
 #' @return Invisibly returns vector of saved file paths.
 export_transparent_png <- function(input,
   masks = NULL,
