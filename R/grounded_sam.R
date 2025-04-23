@@ -190,8 +190,17 @@ grounded_segmentation_cli <- function(image_path,
     stop("Conda executable not found. Please install Conda or provide the path manually.")
   }
   
-  # Check if the Conda environment exists
-  cmd_check_env <- sprintf('%s env list | grep -q "%s"', conda_path, conda_env)
+  if (.Platform$OS.type == "windows") {
+    # Windows PowerShell approach
+    cmd_check_env <- sprintf('%s env list | findstr "%s"', conda_path, conda_env)
+    # Alternative with PowerShell native filtering
+    # sprintf('%s env list | Where-Object { $_ -match "%s" }', conda_path, conda_env)
+  } else {
+    # Unix/Linux approach
+    cmd_check_env <- sprintf('%s env list | grep -q "%s"', conda_path, conda_env)
+  }
+
+  # cmd_check_env <- sprintf('%s env list | grep -q "%s"', conda_path, conda_env)
   env_exists <- system(cmd_check_env, ignore.stderr = TRUE)
   if (env_exists != 0) {
     stop("Specified conda environment '", conda_env, "' does not exist. ",
