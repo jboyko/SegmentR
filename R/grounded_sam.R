@@ -192,17 +192,19 @@ grounded_segmentation_cli <- function(image_path,
   
   if (.Platform$OS.type == "windows") {
     # Windows PowerShell approach
-    cmd_check_env <- sprintf('%s env list | findstr "%s"', conda_path, conda_env)
-    # Alternative with PowerShell native filtering
-    # sprintf('%s env list | Where-Object { $_ -match "%s" }', conda_path, conda_env)
+    conda_path <- gsub("/", "\\\\", conda_path, fixed = FALSE)
+    cmd_list_envs <- sprintf('"%s" env list', conda_path)
+    envs_list <- suppressWarnings(system(cmd_list_envs, intern = TRUE, ignore.stderr = TRUE))
+    env_exists <- any(grepl(conda_env, envs_list, fixed = TRUE))
   } else {
     # Unix/Linux approach
     cmd_check_env <- sprintf('%s env list | grep -q "%s"', conda_path, conda_env)
+    env_exists <- system(cmd_check_env, ignore.stderr = TRUE) == 0
   }
 
   # cmd_check_env <- sprintf('%s env list | grep -q "%s"', conda_path, conda_env)
-  env_exists <- system(cmd_check_env, ignore.stderr = TRUE)
-  if (env_exists != 0) {
+  
+  if (!env_exists) {
     stop("Specified conda environment '", conda_env, "' does not exist. ",
       "Please create it using setup_conda_environment() function.")
   }

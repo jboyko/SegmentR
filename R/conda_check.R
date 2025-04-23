@@ -33,10 +33,19 @@ setup_conda_environment <- function(conda_path = NULL, force = FALSE) {
 
   # Check if the environment already exists
   env_name <- "segmentr-env"
-  cmd_check_env <- sprintf('%s env list | grep -q "%s"', conda_path, env_name)
-  env_exists <- system(cmd_check_env, ignore.stderr = TRUE)
-
-  if (env_exists == 0 && !force) {
+  if (.Platform$OS.type == "windows") {
+    # Windows PowerShell approach
+    conda_path <- gsub("/", "\\\\", conda_path, fixed = FALSE)
+    cmd_list_envs <- sprintf('"%s" env list', conda_path)
+    envs_list <- suppressWarnings(system(cmd_list_envs, intern = TRUE, ignore.stderr = TRUE))
+    env_exists <- any(grepl(env_name, envs_list, fixed = TRUE))
+  } else {
+    # Unix/Linux approach
+    cmd_check_env <- sprintf('%s env list | grep -q "%s"', conda_path, env_name)
+    env_exists <- system(cmd_check_env, ignore.stderr = TRUE) == 0
+  }
+  
+  if (env_exists && !force) {
     message("Conda environment 'segmentr-env' already exists. Use force = TRUE to recreate.")
     return(invisible(NULL))
   }
